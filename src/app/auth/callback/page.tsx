@@ -130,18 +130,15 @@ export default function AuthCallbackPage() {
         // Clear the URL hash
         window.history.replaceState(null, '', window.location.pathname);
 
-        // Redirect based on role
+        // Redirect based on role - use window.location for immediate redirect
         setStatus('Redirecting...');
         console.log('Redirecting with role:', userRole);
         
-        // Use replace to avoid back button issues
-        if (userRole === 'admin') {
-          router.replace('/dashboard/admin');
-        } else if (userRole === 'provider') {
-          router.replace('/dashboard/provider');
-        } else {
-          router.replace('/dashboard/subscriber');
-        }
+        // Clear the hash first
+        window.history.replaceState(null, '', '/dashboard');
+        
+        // Force page reload to dashboard
+        window.location.href = '/dashboard';
       } catch (err) {
         console.error('Callback exception:', err);
         setStatus('Error: ' + (err instanceof Error ? err.message : 'Unknown error'));

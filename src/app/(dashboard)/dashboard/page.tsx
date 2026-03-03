@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabase/client';
 import SubscriberDashboard from './subscriber/page';
 import ProviderDashboard from './provider/page';
 
-interface UserProfile {
+interface UserData {
   id: string;
   email: string;
   name: string | null;
@@ -16,142 +16,73 @@ interface UserProfile {
 
 export default function DashboardPage() {
   const router = useRouter();
-  const [user, setUser] = useState<UserProfile | null>(null);
+  const [user, setUser] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let mounted = true;
-
-    const checkSession = async () => {
-      try {
-        console.log('Dashboard: Checking session...');
-        
-        // Small delay to ensure session is stored
-        await new Promise(resolve => setTimeout(resolve, 100));
-
-        // Get session from Supabase
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-
-        console.log('Dashboard: Session result:', session ? 'found' : 'not found', sessionError);
-
-        if (sessionError) {
-          console.error('Dashboard: Session error:', sessionError);
+    const loadUser = async () => {
+      console.log('Dashboard: Loading user...');
+      
+      // Check localStorage first (fastest, set by callback)
+      const storedUser = localStorage.getItem('piptray_user');
+      if (storedUser) {
+        try {
+          const parsedUser = JSON.parse(storedUser) as UserData;
+          console.log('Dashboard: Found stored user:', parsedUser);
+          setUser(parsedUser);
+          setLoading(false);
+          return;
+        } catch (e) {
+          console.error('Dashboard: Error parsing stored user:', e);
         }
+      }
 
+      // Fallback: Check Supabase session
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        
         if (session?.user) {
-          console.log('Dashboard: User found in session:', session.user.email);
+          console.log('Dashboard: Found Supabase session:', session.user.email);
           
-          // Try to get profile from database
-          const { data: profile, error: profileError } = await supabase
+          // Try to get profile
+          const { data: profile } = await supabase
             .from('users')
             .select('*')
             .eq('id', session.user.id)
             .single();
 
-          console.log('Dashboard: Profile:', profile, profileError);
+          const userData: UserData = profile ? {
+            id: profile.id,
+            email: profile.email,
+            name: profile.name,
+            role: profile.role || 'subscriber',
+            avatar: profile.avatar,
+          } : {
+            id: session.user.id,
+            email: session.user.email!,
+            name: session.user.user_metadata?.full_name || session.user.user_metadata?.name || session.user.email!.split('@')[0],
+            role: 'subscriber',
+            avatar: session.user.user_metadata?.avatar_url || null,
+          };
 
-          if (mounted) {
-            if (profile) {
-              setUser({
-                id: profile.id,
-                email: profile.email,
-                name: profile.name,
-                role: profile.role || 'subscriber',
-                avatar: profile.avatar,
-              });
-            } else {
-              setUser({
-                id: session.user.id,
-                email: session.user.email!,
-                name: session.user.user_metadata?.full_name || session.user.user_metadata?.name || session.user.email!.split('@')[0],
-                role: 'subscriber',
-                avatar: session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture || null,
-              });
-            }
-            setLoading(false);
-          }
+          // Store for future use
+          localStorage.setItem('piptray_user', JSON.stringify(userData));
+          setUser(userData);
+          setLoading(false);
           return;
         }
-
-        // No Supabase session - check localStorage for user data
-        if (typeof window !== 'undefined') {
-          const storedUser = localStorage.getItem('piptray_user');
-          if (storedUser) {
-            console.log('Dashboard: Found stored user');
-            const parsedUser = JSON.parse(storedUser);
-            if (mounted) {
-              setUser(parsedUser);
-              setLoading(false);
-            }
-            return;
-          }
-        }
-
-        // No session at all
-        console.log('Dashboard: No session, redirecting to login');
-        if (mounted) {
-          setLoading(false);
-          router.push('/login');
-        }
-      } catch (err) {
-        console.error('Dashboard: Auth check error:', err);
-        if (mounted) {
-          setLoading(false);
-          router.push('/login');
-        }
+      } catch (e) {
+        console.error('Dashboard: Supabase error:', e);
       }
+
+      // No user found
+      console.log('Dashboard: No user, redirecting to login');
+      router.push('/login');
     };
 
-    checkSession();
-
-    // Listen for auth state changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        console.log('Dashboard: Auth state changed:', event, session?.user?.email);
-        
-        if (event === 'SIGNED_OUT') {
-          if (mounted) {
-            setUser(null);
-            router.push('/login');
-          }
-        } else if (session?.user && mounted) {
-          supabase
-            .from('users')
-            .select('*')
-            .eq('id', session.user.id)
-            .single()
-            .then(({ data: profile }) => {
-              if (mounted) {
-                if (profile) {
-                  setUser({
-                    id: profile.id,
-                    email: profile.email,
-                    name: profile.name,
-                    role: profile.role || 'subscriber',
-                    avatar: profile.avatar,
-                  });
-                } else {
-                  setUser({
-                    id: session.user.id,
-                    email: session.user.email!,
-                    name: session.user.user_metadata?.full_name || session.user.user_metadata?.name || session.user.email!.split('@')[0],
-                    role: 'subscriber',
-                    avatar: session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture || null,
-                  });
-                }
-              }
-            });
-        }
-      }
-    );
-
-    return () => {
-      mounted = false;
-      subscription.unsubscribe();
-    };
+    loadUser();
   }, [router]);
 
-  // Loading state
   if (loading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4">
@@ -161,7 +92,6 @@ export default function DashboardPage() {
     );
   }
 
-  // No user after loading
   if (!user) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4">
@@ -170,7 +100,8 @@ export default function DashboardPage() {
     );
   }
 
-  // Render dashboard based on role
+  console.log('Dashboard: Rendering with user role:', user.role);
+
   if (user.role === 'provider' || user.role === 'admin') {
     return <ProviderDashboard />;
   }
