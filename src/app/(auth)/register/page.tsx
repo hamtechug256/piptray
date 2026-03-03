@@ -149,36 +149,31 @@ export default function RegisterPage() {
   };
 
   const handleGoogleRegister = async () => {
+    setLoading(true);
     try {
-      const isDemo = !process.env.NEXT_PUBLIC_SUPABASE_URL || 
-                     process.env.NEXT_PUBLIC_SUPABASE_URL === 'https://placeholder.supabase.co';
+      const { supabase } = await import('@/lib/supabase/client');
       
-      if (isDemo) {
-        login({
-          id: `demo_google_${Date.now()}`,
-          name: 'Google User',
-          email: 'google@example.com',
-          role: accountType,
-        });
-        if (accountType === 'provider') {
-          router.push('/dashboard/provider');
-        } else {
-          router.push('/dashboard/subscriber');
-        }
-      } else {
-        // Real Google OAuth
-        const { error } = await import('@/lib/supabase/client').then(m => m.supabase.auth.signInWithOAuth({
-          provider: 'google',
-          options: {
-            redirectTo: `${window.location.origin}/api/auth/callback`,
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/api/auth/callback`,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
           },
-        }));
-        
-        if (error) throw error;
+        },
+      });
+      
+      if (error) {
+        console.error('Google OAuth error:', error);
+        setError(error.message);
+        setLoading(false);
       }
+      // If no error, the page will redirect to Google, then back to callback
     } catch (err) {
       console.error('Google register error:', err);
       setError('Google registration failed. Please try again.');
+      setLoading(false);
     }
   };
 

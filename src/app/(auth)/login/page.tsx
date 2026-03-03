@@ -103,33 +103,27 @@ export default function LoginPage() {
   };
 
   const handleGoogleLogin = async () => {
+    setLoading(true);
     try {
-      // For demo mode, just simulate login
-      const isDemo = !process.env.NEXT_PUBLIC_SUPABASE_URL || 
-                     process.env.NEXT_PUBLIC_SUPABASE_URL === 'https://placeholder.supabase.co';
+      const { supabase } = await import('@/lib/supabase/client');
       
-      if (isDemo) {
-        login({
-          id: `demo_google_${Date.now()}`,
-          name: 'Google User',
-          email: 'google@example.com',
-          role: 'subscriber',
-        });
-        router.push('/dashboard/subscriber');
-      } else {
-        // Real Google OAuth
-        const { error } = await import('@/lib/supabase/client').then(m => m.supabase.auth.signInWithOAuth({
-          provider: 'google',
-          options: {
-            redirectTo: `${window.location.origin}/api/auth/callback`,
-          },
-        }));
-        
-        if (error) throw error;
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/api/auth/callback`,
+        },
+      });
+      
+      if (error) {
+        console.error('Google OAuth error:', error);
+        setError(error.message);
+        setLoading(false);
       }
+      // If no error, the page will redirect to Google, then back to callback
     } catch (err) {
       console.error('Google login error:', err);
       setError('Google login failed. Please try again.');
+      setLoading(false);
     }
   };
 

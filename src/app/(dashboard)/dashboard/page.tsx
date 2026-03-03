@@ -8,16 +8,26 @@ import ProviderDashboard from './provider/page';
 
 export default function DashboardPage() {
   const mounted = useMounted();
-  const { user } = useUser();
+  const { user, loading } = useUser();
   const router = useRouter();
 
   useEffect(() => {
-    if (mounted && !user) {
+    if (mounted && !loading && !user) {
       router.push('/login');
     }
-  }, [mounted, user, router]);
+  }, [mounted, user, loading, router]);
 
-  if (!mounted || !user) {
+  // Show loading state while checking auth
+  if (!mounted || loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+
+  // If no user after loading, show nothing (will redirect)
+  if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
