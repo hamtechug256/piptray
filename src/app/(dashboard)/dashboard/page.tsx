@@ -3,8 +3,8 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useMounted, useUser } from '@/hooks/use-mounted';
-import { SubscriberDashboard } from './subscriber/page';
-import { ProviderDashboard } from './provider/page';
+import SubscriberDashboard from './subscriber/page';
+import ProviderDashboard from './provider/page';
 
 export default function DashboardPage() {
   const mounted = useMounted();
