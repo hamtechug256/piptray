@@ -59,7 +59,7 @@ const DEMO_SIGNALS = [
   },
 ];
 
-export function ProviderDashboard() {
+export default function ProviderDashboard() {
   const { user } = useUser();
 
   const formatPrice = (price: number) => {

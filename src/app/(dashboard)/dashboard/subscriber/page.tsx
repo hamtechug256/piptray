@@ -58,7 +58,7 @@ const DEMO_SIGNALS = [
   },
 ];
 
-export function SubscriberDashboard() {
+export default function SubscriberDashboard() {
   const { user } = useUser();
 
   const formatPrice = (price: number) => {
