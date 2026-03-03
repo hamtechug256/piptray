@@ -96,7 +96,7 @@ export default function LoginPage() {
     setGoogleLoading(true);
 
     try {
-      const redirectUrl = `${window.location.origin}/api/auth/callback`;
+      const redirectUrl = `${window.location.origin}/auth/callback`;
       console.log('Starting Google OAuth with redirect:', redirectUrl);
 
       const { data, error: oauthError } = await supabase.auth.signInWithOAuth({
