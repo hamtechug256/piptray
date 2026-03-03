@@ -21,11 +21,10 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Checkbox } from '@/components/ui/checkbox';
-import { useUser } from '@/hooks/use-mounted';
+import { supabase } from '@/lib/supabase/client';
 
 export default function RegisterPage() {
   const router = useRouter();
-  const { login } = useUser();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -92,7 +91,7 @@ export default function RegisterPage() {
       if (data.success) {
         // Real registration successful
         if (data.data?.user) {
-          login(data.data.user);
+          localStorage.setItem('piptray_user', JSON.stringify(data.data.user));
         }
         
         if (data.data?.message) {
@@ -117,7 +116,7 @@ export default function RegisterPage() {
           role: accountType,
         };
 
-        login(userData);
+        localStorage.setItem('piptray_user', JSON.stringify(userData));
         
         if (accountType === 'provider') {
           router.push('/dashboard/provider');
@@ -136,7 +135,7 @@ export default function RegisterPage() {
         role: accountType,
       };
 
-      login(userData);
+      localStorage.setItem('piptray_user', JSON.stringify(userData));
       
       if (accountType === 'provider') {
         router.push('/dashboard/provider');
@@ -151,16 +150,10 @@ export default function RegisterPage() {
   const handleGoogleRegister = async () => {
     setLoading(true);
     try {
-      const { supabase } = await import('@/lib/supabase/client');
-      
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: `${window.location.origin}/api/auth/callback`,
-          queryParams: {
-            access_type: 'offline',
-            prompt: 'consent',
-          },
         },
       });
       
