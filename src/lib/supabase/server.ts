@@ -1,4 +1,4 @@
-import { createServerClient } from '@supabase/supabase-js';
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
 import type { Database } from '@/types/database';
 
@@ -19,7 +19,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
 export async function createClient() {
   const cookieStore = await cookies();
 
-  return createServerClient<Database>(
+  return createSupabaseClient<Database>(
     supabaseUrl || 'https://placeholder.supabase.co',
     supabaseAnonKey || 'placeholder-key',
     {
@@ -52,7 +52,7 @@ export function createAdminClient() {
     throw new Error('SUPABASE_SERVICE_ROLE_KEY is required for admin operations');
   }
 
-  return createServerClient<Database>(
+  return createSupabaseClient<Database>(
     supabaseUrl || 'https://placeholder.supabase.co',
     supabaseServiceKey,
     {

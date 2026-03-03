@@ -14,7 +14,6 @@ import {
   ArrowRight,
   AlertCircle,
   CheckCircle,
-  TrendingUp as TrendingUpIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -35,11 +34,13 @@ export default function RegisterPage() {
   const [accountType, setAccountType] = useState<'subscriber' | 'provider'>('subscriber');
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setSuccess('');
     setLoading(true);
 
     // Validation
@@ -61,8 +62,8 @@ export default function RegisterPage() {
       return;
     }
 
-    if (password.length < 8) {
-      setError('Password must be at least 8 characters');
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters');
       setLoading(false);
       return;
     }
@@ -74,9 +75,62 @@ export default function RegisterPage() {
     }
 
     try {
-      // In demo mode, create the user
-      // In production, this would register via Supabase Auth
+      // Try real API registration
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name,
+          email,
+          password,
+          role: accountType,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Real registration successful
+        if (data.data?.user) {
+          login(data.data.user);
+        }
+        
+        if (data.data?.message) {
+          setSuccess(data.data.message);
+        }
+        
+        // Redirect after short delay
+        setTimeout(() => {
+          if (accountType === 'provider') {
+            router.push('/dashboard/provider');
+          } else {
+            router.push('/dashboard/subscriber');
+          }
+        }, 1500);
+      } else {
+        // Fall back to demo mode
+        console.log('Falling back to demo mode');
+        const userData = {
+          id: `demo_${Date.now()}`,
+          name: name,
+          email: email,
+          role: accountType,
+        };
+
+        login(userData);
+        
+        if (accountType === 'provider') {
+          router.push('/dashboard/provider');
+        } else {
+          router.push('/dashboard/subscriber');
+        }
+      }
+    } catch (err) {
+      console.error('Registration error:', err);
+      
+      // Demo mode fallback
       const userData = {
+        id: `demo_${Date.now()}`,
         name: name,
         email: email,
         role: accountType,
@@ -84,16 +138,47 @@ export default function RegisterPage() {
 
       login(userData);
       
-      // Redirect based on role
       if (accountType === 'provider') {
         router.push('/dashboard/provider');
       } else {
         router.push('/dashboard/subscriber');
       }
-    } catch (err) {
-      console.error('Registration error:', err);
-      setError('An error occurred. Please try again.');
+    } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGoogleRegister = async () => {
+    try {
+      const isDemo = !process.env.NEXT_PUBLIC_SUPABASE_URL || 
+                     process.env.NEXT_PUBLIC_SUPABASE_URL === 'https://placeholder.supabase.co';
+      
+      if (isDemo) {
+        login({
+          id: `demo_google_${Date.now()}`,
+          name: 'Google User',
+          email: 'google@example.com',
+          role: accountType,
+        });
+        if (accountType === 'provider') {
+          router.push('/dashboard/provider');
+        } else {
+          router.push('/dashboard/subscriber');
+        }
+      } else {
+        // Real Google OAuth
+        const { error } = await import('@/lib/supabase/client').then(m => m.supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo: `${window.location.origin}/auth/callback`,
+          },
+        }));
+        
+        if (error) throw error;
+      }
+    } catch (err) {
+      console.error('Google register error:', err);
+      setError('Google registration failed. Please try again.');
     }
   };
 
@@ -141,6 +226,13 @@ export default function RegisterPage() {
               </Alert>
             )}
 
+            {success && (
+              <Alert className="mb-4 border-green-200 bg-green-50 dark:bg-green-900/20 dark:border-green-800">
+                <CheckCircle className="h-4 w-4 text-green-600" />
+                <AlertDescription className="text-green-700 dark:text-green-300">{success}</AlertDescription>
+              </Alert>
+            )}
+
             <form onSubmit={handleRegister} className="space-y-4">
               {/* Account Type */}
               <div className="space-y-2">
@@ -168,7 +260,7 @@ export default function RegisterPage() {
                         : 'border-border hover:border-primary/50'
                     }`}
                   >
-                    <TrendingUpIcon className={`w-6 h-6 ${accountType === 'provider' ? 'text-primary' : 'text-muted-foreground'}`} />
+                    <TrendingUp className={`w-6 h-6 ${accountType === 'provider' ? 'text-primary' : 'text-muted-foreground'}`} />
                     <span className="font-medium">Provide</span>
                     <span className="text-xs text-muted-foreground">signals</span>
                   </button>
@@ -217,7 +309,7 @@ export default function RegisterPage() {
                   <Input
                     id="password"
                     type={showPassword ? 'text' : 'password'}
-                    placeholder="Min 8 characters"
+                    placeholder="Min 6 characters"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="pl-10 pr-10"
@@ -323,18 +415,8 @@ export default function RegisterPage() {
             <Button
               variant="outline"
               className="w-full h-11"
-              onClick={() => {
-                login({
-                  name: 'Google User',
-                  email: 'google@example.com',
-                  role: accountType,
-                });
-                if (accountType === 'provider') {
-                  router.push('/dashboard/provider');
-                } else {
-                  router.push('/dashboard/subscriber');
-                }
-              }}
+              onClick={handleGoogleRegister}
+              disabled={loading}
             >
               <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
                 <path

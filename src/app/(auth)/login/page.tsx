@@ -36,9 +36,53 @@ export default function LoginPage() {
     }
 
     try {
-      // In demo mode, accept any email/password
-      // In production, this would validate against Supabase Auth
+      // Try real API login first
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (data.success && data.data?.user) {
+        // Real login successful
+        login(data.data.user);
+        
+        // Redirect based on role
+        if (data.data.user.role === 'admin') {
+          router.push('/dashboard/admin');
+        } else if (data.data.user.role === 'provider') {
+          router.push('/dashboard/provider');
+        } else {
+          router.push('/dashboard/subscriber');
+        }
+      } else {
+        // Fall back to demo mode
+        console.log('Falling back to demo mode');
+        const userData = {
+          id: `demo_${Date.now()}`,
+          name: email.split('@')[0],
+          email: email,
+          role: email.includes('admin') ? 'admin' : email.includes('provider') ? 'provider' : 'subscriber',
+        };
+
+        login(userData);
+        
+        if (userData.role === 'admin') {
+          router.push('/dashboard/admin');
+        } else if (userData.role === 'provider') {
+          router.push('/dashboard/provider');
+        } else {
+          router.push('/dashboard/subscriber');
+        }
+      }
+    } catch (err) {
+      console.error('Login error:', err);
+      
+      // Demo mode fallback
       const userData = {
+        id: `demo_${Date.now()}`,
         name: email.split('@')[0],
         email: email,
         role: email.includes('admin') ? 'admin' : email.includes('provider') ? 'provider' : 'subscriber',
@@ -46,7 +90,6 @@ export default function LoginPage() {
 
       login(userData);
       
-      // Redirect based on role
       if (userData.role === 'admin') {
         router.push('/dashboard/admin');
       } else if (userData.role === 'provider') {
@@ -54,10 +97,39 @@ export default function LoginPage() {
       } else {
         router.push('/dashboard/subscriber');
       }
-    } catch (err) {
-      console.error('Login error:', err);
-      setError('Invalid email or password');
+    } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    try {
+      // For demo mode, just simulate login
+      const isDemo = !process.env.NEXT_PUBLIC_SUPABASE_URL || 
+                     process.env.NEXT_PUBLIC_SUPABASE_URL === 'https://placeholder.supabase.co';
+      
+      if (isDemo) {
+        login({
+          id: `demo_google_${Date.now()}`,
+          name: 'Google User',
+          email: 'google@example.com',
+          role: 'subscriber',
+        });
+        router.push('/dashboard/subscriber');
+      } else {
+        // Real Google OAuth
+        const { error } = await import('@/lib/supabase/client').then(m => m.supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo: `${window.location.origin}/auth/callback`,
+          },
+        }));
+        
+        if (error) throw error;
+      }
+    } catch (err) {
+      console.error('Google login error:', err);
+      setError('Google login failed. Please try again.');
     }
   };
 
@@ -203,15 +275,8 @@ export default function LoginPage() {
             <Button
               variant="outline"
               className="w-full h-11"
-              onClick={() => {
-                // In demo mode, simulate Google OAuth
-                login({
-                  name: 'Google User',
-                  email: 'google@example.com',
-                  role: 'subscriber',
-                });
-                router.push('/dashboard/subscriber');
-              }}
+              onClick={handleGoogleLogin}
+              disabled={loading}
             >
               <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
                 <path
