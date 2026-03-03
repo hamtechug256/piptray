@@ -7,9 +7,15 @@ export async function GET(request: NextRequest) {
   const error = requestUrl.searchParams.get('error');
   const errorDescription = requestUrl.searchParams.get('error_description');
 
-  // Handle OAuth errors
+  console.log('=== AUTH CALLBACK ===');
+  console.log('URL:', request.url);
+  console.log('Code:', code ? 'present' : 'missing');
+  console.log('Error:', error);
+  console.log('Error Description:', errorDescription);
+
+  // Handle OAuth errors from provider
   if (error) {
-    console.error('OAuth error:', error, errorDescription);
+    console.error('OAuth provider error:', error, errorDescription);
     return NextResponse.redirect(
       `${requestUrl.origin}/login?error=${encodeURIComponent(errorDescription || error)}`
     );
@@ -20,6 +26,7 @@ export async function GET(request: NextRequest) {
 
     // Exchange code for session
     if (code) {
+      console.log('Exchanging code for session...');
       const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
 
       if (exchangeError) {
@@ -30,50 +37,62 @@ export async function GET(request: NextRequest) {
       }
 
       // Get the user
+      console.log('Getting user...');
       const { data: { user }, error: userError } = await supabase.auth.getUser();
 
-      if (userError || !user) {
+      if (userError) {
         console.error('Get user error:', userError);
         return NextResponse.redirect(
-          `${requestUrl.origin}/login?error=Failed to authenticate`
+          `${requestUrl.origin}/login?error=${encodeURIComponent('Failed to get user: ' + userError.message)}`
         );
       }
 
-      // Try to create/update user record (ignore errors)
+      if (!user) {
+        console.error('No user returned');
+        return NextResponse.redirect(
+          `${requestUrl.origin}/login?error=${encodeURIComponent('No user found')}`
+        );
+      }
+
+      console.log('User found:', user.email);
+
+      // Try to create/update user record
       try {
-        // Check if user exists
-        const { data: existingUser } = await supabase
+        const { data: existingUser, error: fetchError } = await supabase
           .from('users')
           .select('id, role')
           .eq('id', user.id)
           .single();
 
+        console.log('Existing user check:', existingUser, fetchError?.message);
+
         if (!existingUser) {
           // Create new user
-          const newUser = {
-            id: user.id,
-            email: user.email!,
-            name: user.user_metadata?.full_name || user.user_metadata?.name || user.email!.split('@')[0],
-            role: 'subscriber' as const,
-            avatar: user.user_metadata?.avatar_url || user.user_metadata?.picture || null,
-            emailVerified: true,
-            emailVerifiedAt: new Date().toISOString(),
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          };
-
+          console.log('Creating new user record...');
           const { error: insertError } = await supabase
             .from('users')
-            .insert(newUser);
+            .insert({
+              id: user.id,
+              email: user.email!,
+              name: user.user_metadata?.full_name || user.user_metadata?.name || user.email!.split('@')[0],
+              role: 'subscriber',
+              avatar: user.user_metadata?.avatar_url || user.user_metadata?.picture || null,
+              emailVerified: true,
+              emailVerifiedAt: new Date().toISOString(),
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            });
 
           if (insertError) {
             console.error('User insert error:', insertError);
+            // Continue anyway - the auth user exists
           }
-
-          // Redirect new users to subscriber dashboard
+          
+          console.log('Redirecting to subscriber dashboard');
           return NextResponse.redirect(`${requestUrl.origin}/dashboard/subscriber`);
         } else {
           // Update existing user
+          console.log('Updating existing user...');
           await supabase
             .from('users')
             .update({
@@ -83,8 +102,9 @@ export async function GET(request: NextRequest) {
             })
             .eq('id', user.id);
 
-          // Redirect based on role
           const role = existingUser.role || 'subscriber';
+          console.log('Redirecting to dashboard for role:', role);
+          
           if (role === 'admin') {
             return NextResponse.redirect(`${requestUrl.origin}/dashboard/admin`);
           } else if (role === 'provider') {
@@ -99,12 +119,13 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // No code, redirect to login
-    return NextResponse.redirect(`${requestUrl.origin}/login`);
+    // No code present
+    console.log('No code in request, redirecting to login');
+    return NextResponse.redirect(`${requestUrl.origin}/login?error=${encodeURIComponent('No authorization code received')}`);
   } catch (err) {
-    console.error('Callback error:', err);
+    console.error('Callback exception:', err);
     return NextResponse.redirect(
-      `${requestUrl.origin}/login?error=Authentication failed`
+      `${requestUrl.origin}/login?error=${encodeURIComponent('Authentication failed: ' + (err instanceof Error ? err.message : 'Unknown error'))}`
     );
   }
 }
