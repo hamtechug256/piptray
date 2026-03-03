@@ -360,6 +360,112 @@ export interface PaymentInsert {
 }
 
 // ============================================
+// PROVIDER APPLICATION
+// ============================================
+export type ApplicationStatus = 'pending' | 'under_review' | 'approved' | 'rejected';
+export type TradingStyle = 'scalping' | 'day_trading' | 'swing_trading' | 'position_trading';
+export type ExperienceLevel = 'beginner' | 'intermediate' | 'advanced' | 'professional';
+
+export interface ProviderApplication {
+  id: string;
+  userId: string;
+  status: ApplicationStatus;
+  
+  // Trading Background
+  tradingExperience: number; // years
+  experienceLevel: ExperienceLevel;
+  tradingStyle: TradingStyle[];
+  marketsTraded: string[]; // ['forex', 'crypto', 'stocks', 'indices', 'commodities']
+  
+  // Performance Info
+  averageMonthlySignals: number;
+  estimatedWinRate: number | null;
+  trackRecordDescription: string | null;
+  
+  // Social Proof
+  telegramChannel: string | null;
+  twitterHandle: string | null;
+  tradingViewProfile: string | null;
+  otherSocialLinks: string | null;
+  
+  // Motivation
+  motivationStatement: string;
+  
+  // Verification
+  identityDocumentUrl: string | null;
+  tradingStatementUrl: string | null;
+  
+  // Admin Review
+  reviewedBy: string | null;
+  reviewedAt: string | null;
+  adminNotes: string | null;
+  rejectionReason: string | null;
+  
+  createdAt: string;
+  updatedAt: string;
+  
+  // Joined data
+  user?: User;
+  reviewer?: User;
+}
+
+export interface ProviderApplicationInsert {
+  id?: string;
+  userId: string;
+  status?: ApplicationStatus;
+  
+  tradingExperience: number;
+  experienceLevel: ExperienceLevel;
+  tradingStyle: TradingStyle[];
+  marketsTraded: string[];
+  
+  averageMonthlySignals?: number;
+  estimatedWinRate?: number | null;
+  trackRecordDescription?: string | null;
+  
+  telegramChannel?: string | null;
+  twitterHandle?: string | null;
+  tradingViewProfile?: string | null;
+  otherSocialLinks?: string | null;
+  
+  motivationStatement: string;
+  
+  identityDocumentUrl?: string | null;
+  tradingStatementUrl?: string | null;
+  
+  reviewedBy?: string | null;
+  reviewedAt?: string | null;
+  adminNotes?: string | null;
+  rejectionReason?: string | null;
+  
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface ProviderApplicationUpdate {
+  status?: ApplicationStatus;
+  tradingExperience?: number;
+  experienceLevel?: ExperienceLevel;
+  tradingStyle?: TradingStyle[];
+  marketsTraded?: string[];
+  averageMonthlySignals?: number;
+  estimatedWinRate?: number | null;
+  trackRecordDescription?: string | null;
+  telegramChannel?: string | null;
+  twitterHandle?: string | null;
+  tradingViewProfile?: string | null;
+  otherSocialLinks?: string | null;
+  motivationStatement?: string;
+  identityDocumentUrl?: string | null;
+  tradingStatementUrl?: string | null;
+  reviewedBy?: string | null;
+  reviewedAt?: string | null;
+  adminNotes?: string | null;
+  rejectionReason?: string | null;
+  updatedAt?: string;
+}
+
+// ============================================
 // NOTIFICATION
 // ============================================
 export type NotificationType = 'new_signal' | 'tp_hit' | 'subscription_expiring' | 'payment_confirmed' | 'new_subscriber' | 'new_review' | 'system';
@@ -426,6 +532,11 @@ export type Database = {
         Row: Notification;
         Insert: NotificationInsert;
         Update: never;
+      };
+      provider_applications: {
+        Row: ProviderApplication;
+        Insert: ProviderApplicationInsert;
+        Update: ProviderApplicationUpdate;
       };
     };
     Views: Record<string, never>;

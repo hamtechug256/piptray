@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -13,12 +13,15 @@ import {
   Star,
   CheckCircle,
   Zap,
+  Shield,
+  Award,
+  Clock,
+  AlertCircle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useUser } from '@/hooks/use-mounted';
-import { supabase } from '@/lib/supabase/client';
 
 // Demo subscriptions
 const DEMO_SUBSCRIPTIONS = [
@@ -63,9 +66,42 @@ const DEMO_SIGNALS = [
 ];
 
 export default function SubscriberDashboard() {
-  const { user, setUser } = useUser();
+  const { user } = useUser();
   const router = useRouter();
-  const [becomingProvider, setBecomingProvider] = useState(false);
+  const [checkingApplication, setCheckingApplication] = useState(false);
+  const [existingApplication, setExistingApplication] = useState<any>(null);
+
+  // Check for existing provider application on mount
+  useEffect(() => {
+    const checkApplication = async () => {
+      if (!user) return;
+      
+      setCheckingApplication(true);
+      try {
+        const response = await fetch('/api/provider-applications', {
+          headers: {
+            'Authorization': `Bearer ${user.id}`,
+          },
+        });
+        
+        const data = await response.json();
+        if (data.success && data.data?.length > 0) {
+          const pendingApp = data.data.find(
+            (app: any) => app.status === 'pending' || app.status === 'under_review'
+          );
+          if (pendingApp) {
+            setExistingApplication(pendingApp);
+          }
+        }
+      } catch (error) {
+        console.error('Error checking application:', error);
+      } finally {
+        setCheckingApplication(false);
+      }
+    };
+
+    checkApplication();
+  }, [user]);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-UG', {
@@ -83,43 +119,13 @@ export default function SubscriberDashboard() {
     }).format(new Date(date));
   };
 
-  const handleBecomeProvider = async () => {
-    if (!user) return;
-    
-    setBecomingProvider(true);
-    try {
-      // Update user role in database
-      const { error } = await supabase
-        .from('users')
-        .update({ role: 'provider', updatedAt: new Date().toISOString() })
-        .eq('id', user.id);
-
-      if (error) throw error;
-
-      // Create provider profile
-      await supabase
-        .from('providers')
-        .insert({
-          userId: user.id,
-          displayName: user.name || user.email.split('@')[0],
-          isActive: true,
-          tier: 'new',
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        });
-
-      // Update local state
-      const updatedUser = { ...user, role: 'provider' as const };
-      localStorage.setItem('piptray_user', JSON.stringify(updatedUser));
-      setUser(updatedUser);
-
-      // Redirect to provider dashboard
-      router.push('/dashboard/provider');
-    } catch (error) {
-      console.error('Error becoming provider:', error);
-      alert('Failed to become provider. Please try again.');
-    } finally {
-      setBecomingProvider(false);
+  const handleBecomeProvider = () => {
+    if (existingApplication) {
+      // If already applied, go to status page
+      router.push('/dashboard/application-status');
+    } else {
+      // Otherwise, go to application form
+      router.push('/dashboard/become-provider');
     }
   };
 
@@ -211,33 +217,72 @@ export default function SubscriberDashboard() {
             <div className="flex flex-col md:flex-row items-center justify-between gap-4">
               <div className="flex items-center gap-4">
                 <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center">
-                  <Zap className="w-7 h-7 text-primary" />
+                  <Award className="w-7 h-7 text-primary" />
                 </div>
                 <div>
                   <h3 className="text-xl font-bold">Become a Signal Provider</h3>
                   <p className="text-muted-foreground">
-                    Share your trading signals and earn money. Keep 93% of your revenue!
+                    {existingApplication 
+                      ? 'Your application is being reviewed. Track your progress.'
+                      : 'Share your trading signals and earn money. Keep 93% of your revenue!'
+                    }
                   </p>
                 </div>
               </div>
-              <Button 
-                size="lg" 
-                className="btn-primary"
-                onClick={handleBecomeProvider}
-                disabled={becomingProvider}
-              >
-                {becomingProvider ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
-                    Setting up...
-                  </>
-                ) : (
-                  <>
-                    Start Providing
+              {existingApplication ? (
+                <div className="flex flex-col sm:flex-row items-center gap-3">
+                  <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+                    <Clock className="w-3 h-3 mr-1" />
+                    Application Pending
+                  </Badge>
+                  <Button 
+                    size="lg" 
+                    variant="outline"
+                    onClick={handleBecomeProvider}
+                    disabled={checkingApplication}
+                  >
+                    View Status
                     <ArrowRight className="w-4 h-4 ml-2" />
-                  </>
-                )}
-              </Button>
+                  </Button>
+                </div>
+              ) : (
+                <Button 
+                  size="lg" 
+                  className="btn-primary"
+                  onClick={handleBecomeProvider}
+                  disabled={checkingApplication}
+                >
+                  {checkingApplication ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+                      Checking...
+                    </>
+                  ) : (
+                    <>
+                      Apply Now
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </>
+                  )}
+                </Button>
+              )}
+            </div>
+            
+            {/* Trust indicators */}
+            <div className="mt-6 pt-6 border-t border-dashed">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Shield className="w-4 h-4 text-green-600" />
+                  <span>Verified Providers</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <CheckCircle className="w-4 h-4 text-blue-600" />
+                  <span>Quality Signals Only</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Star className="w-4 h-4 text-amber-600" />
+                  <span>93% Revenue Share</span>
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
