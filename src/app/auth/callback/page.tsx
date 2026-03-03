@@ -134,11 +134,11 @@ export default function AuthCallbackPage() {
         setStatus('Redirecting...');
         console.log('Redirecting with role:', userRole);
         
-        // Clear the hash first
-        window.history.replaceState(null, '', '/dashboard');
+        // Small delay to ensure localStorage is written
+        await new Promise(r => setTimeout(r, 100));
         
         // Force page reload to dashboard
-        window.location.href = '/dashboard';
+        window.location.replace('/dashboard');
       } catch (err) {
         console.error('Callback exception:', err);
         setStatus('Error: ' + (err instanceof Error ? err.message : 'Unknown error'));

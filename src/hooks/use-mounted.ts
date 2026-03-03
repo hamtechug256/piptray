@@ -2,7 +2,7 @@
 
 import { useSyncExternalStore, useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase, getCurrentUser, getSession } from '@/lib/supabase/client';
+import { supabase } from '@/lib/supabase/client';
 
 // Empty subscribe function for useSyncExternalStore
 const emptySubscribe = () => () => {};
@@ -57,55 +57,69 @@ interface AuthUser {
   emailVerified?: boolean;
 }
 
-// Hook for getting user - uses Supabase with localStorage fallback for demo
+// Hook for getting user - prioritize localStorage for reliability
 export function useUser() {
   const router = useRouter();
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
   const mounted = useMounted();
 
-  // Check for existing session on mount
   useEffect(() => {
     if (!mounted) return;
 
     const checkSession = async () => {
+      console.log('useUser: Checking session...');
+      
+      // First check localStorage (set by auth callback)
       try {
-        // First try Supabase session
+        const storedUser = window.localStorage.getItem('piptray_user');
+        if (storedUser) {
+          const parsedUser = JSON.parse(storedUser) as AuthUser;
+          console.log('useUser: Found stored user:', parsedUser.email);
+          setUser(parsedUser);
+          setLoading(false);
+          return;
+        }
+      } catch (e) {
+        console.error('useUser: Error reading localStorage:', e);
+      }
+
+      // Fallback: check Supabase session
+      try {
         const { data: { session } } = await supabase.auth.getSession();
         
         if (session?.user) {
-          // Get profile from users table
+          console.log('useUser: Found Supabase session:', session.user.email);
+          
+          // Try to get profile
           const { data: profile } = await supabase
             .from('users')
             .select('*')
             .eq('id', session.user.id)
             .single();
 
-          setUser({
+          const userData: AuthUser = {
             id: session.user.id,
             email: session.user.email!,
-            name: profile?.name || session.user.user_metadata?.name,
+            name: profile?.name || session.user.user_metadata?.full_name || session.user.user_metadata?.name || null,
             role: profile?.role || 'subscriber',
-            avatar: profile?.avatar,
+            avatar: profile?.avatar || session.user.user_metadata?.avatar_url || null,
             emailVerified: !!session.user.email_confirmed_at,
-          });
-        } else {
-          // Fallback to localStorage for demo mode
-          const storedUser = window.localStorage.getItem('piptray_user');
-          if (storedUser) {
-            setUser(JSON.parse(storedUser));
-          }
+          };
+
+          // Store for future use
+          window.localStorage.setItem('piptray_user', JSON.stringify(userData));
+          setUser(userData);
+          setLoading(false);
+          return;
         }
-      } catch (error) {
-        console.error('Session check error:', error);
-        // Fallback to localStorage
-        const storedUser = window.localStorage.getItem('piptray_user');
-        if (storedUser) {
-          setUser(JSON.parse(storedUser));
-        }
-      } finally {
-        setLoading(false);
+      } catch (e) {
+        console.error('useUser: Supabase error:', e);
       }
+
+      // No session found
+      console.log('useUser: No session found');
+      setLoading(false);
     };
 
     checkSession();
@@ -113,9 +127,11 @@ export function useUser() {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('useUser: Auth state changed:', event);
+        
         if (event === 'SIGNED_OUT') {
-          setUser(null);
           window.localStorage.removeItem('piptray_user');
+          setUser(null);
         } else if (session?.user) {
           const { data: profile } = await supabase
             .from('users')
@@ -123,14 +139,17 @@ export function useUser() {
             .eq('id', session.user.id)
             .single();
 
-          setUser({
+          const userData: AuthUser = {
             id: session.user.id,
             email: session.user.email!,
-            name: profile?.name || session.user.user_metadata?.name,
+            name: profile?.name || session.user.user_metadata?.name || null,
             role: profile?.role || 'subscriber',
             avatar: profile?.avatar,
             emailVerified: !!session.user.email_confirmed_at,
-          });
+          };
+
+          window.localStorage.setItem('piptray_user', JSON.stringify(userData));
+          setUser(userData);
         }
       }
     );
@@ -141,11 +160,13 @@ export function useUser() {
   }, [mounted]);
 
   const login = useCallback((userData: AuthUser) => {
+    console.log('useUser: Login called for:', userData.email);
     window.localStorage.setItem('piptray_user', JSON.stringify(userData));
     setUser(userData);
   }, []);
 
   const logout = useCallback(async () => {
+    console.log('useUser: Logout called');
     try {
       await supabase.auth.signOut();
     } catch (error) {

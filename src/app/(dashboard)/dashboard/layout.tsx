@@ -57,18 +57,26 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const mounted = useMounted();
-  const { user, logout } = useUser();
+  const { user, logout, loading } = useUser();
   const pathname = usePathname();
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
-    if (mounted && !user) {
+    if (mounted && !loading && !user) {
       router.push('/login');
     }
-  }, [mounted, user, router]);
+  }, [mounted, user, loading, router]);
 
-  if (!mounted || !user) {
+  if (!mounted || loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+
+  if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
