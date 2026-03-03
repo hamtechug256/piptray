@@ -1,7 +1,9 @@
 'use client';
 
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   TrendingUp,
   CreditCard,
@@ -10,11 +12,13 @@ import {
   ArrowRight,
   Star,
   CheckCircle,
+  Zap,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useUser } from '@/hooks/use-mounted';
+import { supabase } from '@/lib/supabase/client';
 
 // Demo subscriptions
 const DEMO_SUBSCRIPTIONS = [
@@ -59,7 +63,9 @@ const DEMO_SIGNALS = [
 ];
 
 export default function SubscriberDashboard() {
-  const { user } = useUser();
+  const { user, setUser } = useUser();
+  const router = useRouter();
+  const [becomingProvider, setBecomingProvider] = useState(false);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-UG', {
@@ -75,6 +81,46 @@ export default function SubscriberDashboard() {
       day: 'numeric',
       year: 'numeric',
     }).format(new Date(date));
+  };
+
+  const handleBecomeProvider = async () => {
+    if (!user) return;
+    
+    setBecomingProvider(true);
+    try {
+      // Update user role in database
+      const { error } = await supabase
+        .from('users')
+        .update({ role: 'provider', updatedAt: new Date().toISOString() })
+        .eq('id', user.id);
+
+      if (error) throw error;
+
+      // Create provider profile
+      await supabase
+        .from('providers')
+        .insert({
+          userId: user.id,
+          displayName: user.name || user.email.split('@')[0],
+          isActive: true,
+          tier: 'new',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+
+      // Update local state
+      const updatedUser = { ...user, role: 'provider' as const };
+      localStorage.setItem('piptray_user', JSON.stringify(updatedUser));
+      setUser(updatedUser);
+
+      // Redirect to provider dashboard
+      router.push('/dashboard/provider');
+    } catch (error) {
+      console.error('Error becoming provider:', error);
+      alert('Failed to become provider. Please try again.');
+    } finally {
+      setBecomingProvider(false);
+    }
   };
 
   return (
@@ -153,6 +199,49 @@ export default function SubscriberDashboard() {
           </Card>
         </motion.div>
       </div>
+
+      {/* Become a Provider CTA */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.35 }}
+      >
+        <Card className="border-2 border-dashed border-primary/50 bg-gradient-to-br from-primary/5 to-transparent">
+          <CardContent className="p-6">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center">
+                  <Zap className="w-7 h-7 text-primary" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold">Become a Signal Provider</h3>
+                  <p className="text-muted-foreground">
+                    Share your trading signals and earn money. Keep 93% of your revenue!
+                  </p>
+                </div>
+              </div>
+              <Button 
+                size="lg" 
+                className="btn-primary"
+                onClick={handleBecomeProvider}
+                disabled={becomingProvider}
+              >
+                {becomingProvider ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+                    Setting up...
+                  </>
+                ) : (
+                  <>
+                    Start Providing
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </>
+                )}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
 
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Subscriptions */}
