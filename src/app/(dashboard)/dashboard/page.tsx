@@ -24,68 +24,77 @@ export default function DashboardPage() {
 
     const checkSession = async () => {
       try {
+        console.log('Dashboard: Checking session...');
+        
+        // Small delay to ensure session is stored
+        await new Promise(resolve => setTimeout(resolve, 100));
+
         // Get session from Supabase
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 
+        console.log('Dashboard: Session result:', session ? 'found' : 'not found', sessionError);
+
         if (sessionError) {
-          console.error('Session error:', sessionError);
-          if (mounted) {
-            setLoading(false);
-            router.push('/login');
-          }
-          return;
+          console.error('Dashboard: Session error:', sessionError);
         }
 
-        if (!session?.user) {
-          // No session, check localStorage fallback
-          const storedUser = typeof window !== 'undefined' 
-            ? localStorage.getItem('piptray_user') 
-            : null;
+        if (session?.user) {
+          console.log('Dashboard: User found in session:', session.user.email);
           
-          if (storedUser && mounted) {
-            setUser(JSON.parse(storedUser));
+          // Try to get profile from database
+          const { data: profile, error: profileError } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
+
+          console.log('Dashboard: Profile:', profile, profileError);
+
+          if (mounted) {
+            if (profile) {
+              setUser({
+                id: profile.id,
+                email: profile.email,
+                name: profile.name,
+                role: profile.role || 'subscriber',
+                avatar: profile.avatar,
+              });
+            } else {
+              setUser({
+                id: session.user.id,
+                email: session.user.email!,
+                name: session.user.user_metadata?.full_name || session.user.user_metadata?.name || session.user.email!.split('@')[0],
+                role: 'subscriber',
+                avatar: session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture || null,
+              });
+            }
             setLoading(false);
-          } else if (mounted) {
-            setLoading(false);
-            router.push('/login');
           }
           return;
         }
 
-        // Get user profile from database
-        const { data: profile, error: profileError } = await supabase
-          .from('users')
-          .select('*')
-          .eq('id', session.user.id)
-          .single();
-
-        if (profileError && profileError.code !== 'PGRST116') {
-          console.error('Profile error:', profileError);
+        // No Supabase session - check localStorage for user data
+        if (typeof window !== 'undefined') {
+          const storedUser = localStorage.getItem('piptray_user');
+          if (storedUser) {
+            console.log('Dashboard: Found stored user');
+            const parsedUser = JSON.parse(storedUser);
+            if (mounted) {
+              setUser(parsedUser);
+              setLoading(false);
+            }
+            return;
+          }
         }
 
+        // No session at all
+        console.log('Dashboard: No session, redirecting to login');
         if (mounted) {
-          if (profile) {
-            setUser({
-              id: profile.id,
-              email: profile.email,
-              name: profile.name,
-              role: profile.role || 'subscriber',
-              avatar: profile.avatar,
-            });
-          } else {
-            // User exists in auth but not in users table
-            setUser({
-              id: session.user.id,
-              email: session.user.email!,
-              name: session.user.user_metadata?.name || session.user.email!.split('@')[0],
-              role: 'subscriber',
-              avatar: session.user.user_metadata?.avatar_url || null,
-            });
-          }
           setLoading(false);
+          router.push('/login');
         }
       } catch (err) {
-        console.error('Auth check error:', err);
+        console.error('Dashboard: Auth check error:', err);
         if (mounted) {
           setLoading(false);
           router.push('/login');
@@ -97,36 +106,41 @@ export default function DashboardPage() {
 
     // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
+        console.log('Dashboard: Auth state changed:', event, session?.user?.email);
+        
         if (event === 'SIGNED_OUT') {
           if (mounted) {
             setUser(null);
             router.push('/login');
           }
         } else if (session?.user && mounted) {
-          const { data: profile } = await supabase
+          supabase
             .from('users')
             .select('*')
             .eq('id', session.user.id)
-            .single();
-
-          if (profile) {
-            setUser({
-              id: profile.id,
-              email: profile.email,
-              name: profile.name,
-              role: profile.role || 'subscriber',
-              avatar: profile.avatar,
+            .single()
+            .then(({ data: profile }) => {
+              if (mounted) {
+                if (profile) {
+                  setUser({
+                    id: profile.id,
+                    email: profile.email,
+                    name: profile.name,
+                    role: profile.role || 'subscriber',
+                    avatar: profile.avatar,
+                  });
+                } else {
+                  setUser({
+                    id: session.user.id,
+                    email: session.user.email!,
+                    name: session.user.user_metadata?.full_name || session.user.user_metadata?.name || session.user.email!.split('@')[0],
+                    role: 'subscriber',
+                    avatar: session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture || null,
+                  });
+                }
+              }
             });
-          } else {
-            setUser({
-              id: session.user.id,
-              email: session.user.email!,
-              name: session.user.user_metadata?.name || session.user.email!.split('@')[0],
-              role: 'subscriber',
-              avatar: session.user.user_metadata?.avatar_url || null,
-            });
-          }
         }
       }
     );
