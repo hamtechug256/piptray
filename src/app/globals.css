@@ -1,0 +1,622 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+}
+
+/* ============================================
+   PIPTRAY PROFESSIONAL LIGHT THEME
+   ============================================ */
+:root {
+  --radius: 0.75rem;
+  
+  /* Base Colors */
+  --background: oklch(0.99 0 0);
+  --foreground: oklch(0.15 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.15 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.15 0 0);
+  
+  /* Primary - Professional Blue */
+  --primary: oklch(0.55 0.2 200);
+  --primary-foreground: oklch(1 0 0);
+  
+  /* Secondary */
+  --secondary: oklch(0.96 0.01 200);
+  --secondary-foreground: oklch(0.25 0 0);
+  
+  /* Muted */
+  --muted: oklch(0.97 0.005 200);
+  --muted-foreground: oklch(0.45 0 0);
+  
+  /* Accent */
+  --accent: oklch(0.96 0.02 200);
+  --accent-foreground: oklch(0.2 0 0);
+  
+  /* Destructive - Red for sell signals */
+  --destructive: oklch(0.55 0.22 25);
+  
+  /* Success - Green for buy signals */
+  --success: oklch(0.65 0.18 145);
+  --success-foreground: oklch(1 0 0);
+  
+  /* Warning - Yellow */
+  --warning: oklch(0.75 0.15 85);
+  --warning-foreground: oklch(0.15 0 0);
+  
+  /* UI Colors */
+  --border: oklch(0.9 0.01 200);
+  --input: oklch(0.92 0.01 200);
+  --ring: oklch(0.55 0.2 200);
+  
+  /* Chart Colors */
+  --chart-1: oklch(0.55 0.2 200);
+  --chart-2: oklch(0.65 0.18 145);
+  --chart-3: oklch(0.75 0.15 85);
+  --chart-4: oklch(0.60 0.18 280);
+  --chart-5: oklch(0.55 0.22 25);
+  
+  /* Sidebar */
+  --sidebar: oklch(0.98 0 0);
+  --sidebar-foreground: oklch(0.15 0 0);
+  --sidebar-primary: oklch(0.55 0.2 200);
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent: oklch(0.96 0.02 200);
+  --sidebar-accent-foreground: oklch(0.2 0 0);
+  --sidebar-border: oklch(0.92 0.01 200);
+  --sidebar-ring: oklch(0.55 0.2 200);
+}
+
+/* ============================================
+   DARK THEME
+   ============================================ */
+.dark {
+  --background: oklch(0.12 0 0);
+  --foreground: oklch(0.98 0 0);
+  --card: oklch(0.16 0 0);
+  --card-foreground: oklch(0.98 0 0);
+  --popover: oklch(0.16 0 0);
+  --popover-foreground: oklch(0.98 0 0);
+  
+  --primary: oklch(0.60 0.2 200);
+  --primary-foreground: oklch(0.12 0 0);
+  
+  --secondary: oklch(0.22 0.01 200);
+  --secondary-foreground: oklch(0.98 0 0);
+  
+  --muted: oklch(0.22 0.005 200);
+  --muted-foreground: oklch(0.65 0 0);
+  
+  --accent: oklch(0.24 0.02 200);
+  --accent-foreground: oklch(0.98 0 0);
+  
+  --destructive: oklch(0.60 0.22 25);
+  --success: oklch(0.68 0.18 145);
+  --warning: oklch(0.78 0.15 85);
+  
+  --border: oklch(0.28 0.01 200);
+  --input: oklch(0.24 0.01 200);
+  --ring: oklch(0.60 0.2 200);
+  
+  --chart-1: oklch(0.60 0.2 200);
+  --chart-2: oklch(0.68 0.18 145);
+  --chart-3: oklch(0.78 0.15 85);
+  --chart-4: oklch(0.65 0.18 280);
+  --chart-5: oklch(0.60 0.22 25);
+  
+  --sidebar: oklch(0.14 0 0);
+  --sidebar-foreground: oklch(0.98 0 0);
+  --sidebar-primary: oklch(0.60 0.2 200);
+  --sidebar-primary-foreground: oklch(0.12 0 0);
+  --sidebar-accent: oklch(0.24 0.02 200);
+  --sidebar-accent-foreground: oklch(0.98 0 0);
+  --sidebar-border: oklch(0.28 0.01 200);
+  --sidebar-ring: oklch(0.60 0.2 200);
+}
+
+/* ============================================
+   BASE STYLES
+   ============================================ */
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+  
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  ::selection {
+    background: oklch(0.55 0.2 200 / 20%);
+    color: oklch(0.15 0 0);
+  }
+  
+  .dark ::selection {
+    background: oklch(0.60 0.2 200 / 30%);
+    color: oklch(0.98 0 0);
+  }
+}
+
+/* ============================================
+   PROFESSIONAL SCROLLBAR
+   ============================================ */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: oklch(0.96 0 0);
+}
+
+::-webkit-scrollbar-thumb {
+  background: oklch(0.75 0.05 200);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: oklch(0.65 0.08 200);
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: oklch(0.18 0 0);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: oklch(0.35 0.05 200);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: oklch(0.45 0.08 200);
+}
+
+/* ============================================
+   CUSTOM ANIMATIONS
+   ============================================ */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes pulse-subtle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-out forwards;
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.6s ease-out forwards;
+}
+
+.animate-slide-in-right {
+  animation: slideInRight 0.5s ease-out forwards;
+}
+
+.animate-slide-in-left {
+  animation: slideInLeft 0.5s ease-out forwards;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.3s ease-out forwards;
+}
+
+.animate-pulse-subtle {
+  animation: pulse-subtle 2s ease-in-out infinite;
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* ============================================
+   CARD STYLES
+   ============================================ */
+.card-shadow {
+  box-shadow: 0 1px 3px oklch(0 0 0 / 5%), 0 4px 12px oklch(0 0 0 / 5%);
+}
+
+.card-shadow-lg {
+  box-shadow: 0 4px 6px oklch(0 0 0 / 5%), 0 10px 30px oklch(0 0 0 / 8%);
+}
+
+.card-hover {
+  transition: all 0.3s ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 25px oklch(0 0 0 / 10%), 0 4px 12px oklch(0.55 0.2 200 / 8%);
+}
+
+.dark .card-hover:hover {
+  box-shadow: 0 8px 25px oklch(0 0 0 / 30%), 0 4px 12px oklch(0.60 0.2 200 / 10%);
+}
+
+/* ============================================
+   BUTTON STYLES
+   ============================================ */
+.btn-primary {
+  background: linear-gradient(135deg, oklch(0.55 0.2 200) 0%, oklch(0.50 0.18 220) 100%);
+  color: white;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  border: none;
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, oklch(0.50 0.22 200) 0%, oklch(0.45 0.20 220) 100%);
+  box-shadow: 0 4px 15px oklch(0.55 0.2 200 / 30%);
+  transform: translateY(-2px);
+}
+
+.btn-secondary {
+  background: oklch(0.96 0.01 200);
+  color: oklch(0.25 0 0);
+  font-weight: 500;
+  transition: all 0.3s ease;
+  border: 1px solid oklch(0.9 0.01 200);
+}
+
+.btn-secondary:hover {
+  background: oklch(0.94 0.02 200);
+  border-color: oklch(0.85 0.02 200);
+}
+
+.dark .btn-secondary {
+  background: oklch(0.22 0.01 200);
+  color: oklch(0.98 0 0);
+  border-color: oklch(0.30 0.01 200);
+}
+
+.dark .btn-secondary:hover {
+  background: oklch(0.26 0.02 200);
+  border-color: oklch(0.38 0.02 200);
+}
+
+/* ============================================
+   SIGNAL STYLES
+   ============================================ */
+.signal-buy {
+  background: linear-gradient(135deg, oklch(0.65 0.18 145) 0%, oklch(0.55 0.16 150) 100%);
+  color: white;
+}
+
+.signal-sell {
+  background: linear-gradient(135deg, oklch(0.55 0.22 25) 0%, oklch(0.50 0.20 30) 100%);
+  color: white;
+}
+
+.signal-badge-buy {
+  background: oklch(0.92 0.08 145);
+  color: oklch(0.35 0.12 145);
+}
+
+.signal-badge-sell {
+  background: oklch(0.92 0.10 25);
+  color: oklch(0.40 0.15 25);
+}
+
+/* ============================================
+   PROVIDER TIER BADGES
+   ============================================ */
+.badge-new {
+  background: oklch(0.94 0.01 200);
+  color: oklch(0.40 0.02 200);
+}
+
+.badge-registered {
+  background: oklch(0.92 0.05 200);
+  color: oklch(0.35 0.08 200);
+}
+
+.badge-verified {
+  background: oklch(0.92 0.08 145);
+  color: oklch(0.35 0.10 145);
+}
+
+.badge-top {
+  background: oklch(0.92 0.10 85);
+  color: oklch(0.40 0.10 85);
+}
+
+.badge-elite {
+  background: oklch(0.92 0.08 280);
+  color: oklch(0.40 0.12 280);
+}
+
+/* ============================================
+   HERO GRADIENT
+   ============================================ */
+.hero-gradient {
+  background: linear-gradient(135deg, oklch(0.55 0.2 200 / 5%) 0%, oklch(0.50 0.18 220 / 3%) 100%);
+}
+
+.hero-gradient-bold {
+  background: linear-gradient(135deg, oklch(0.55 0.2 200) 0%, oklch(0.45 0.18 240) 100%);
+}
+
+/* ============================================
+   GLASS EFFECT
+   ============================================ */
+.glass {
+  background: oklch(1 0 0 / 80%);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.dark .glass {
+  background: oklch(0.16 0 0 / 80%);
+}
+
+/* ============================================
+   GRADIENT TEXT
+   ============================================ */
+.gradient-text {
+  background: linear-gradient(135deg, oklch(0.55 0.2 200) 0%, oklch(0.45 0.18 240) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ============================================
+   STAT CARD
+   ============================================ */
+.stat-card {
+  background: white;
+  border: 1px solid oklch(0.92 0.01 200);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+  border-color: oklch(0.80 0.05 200);
+  box-shadow: 0 8px 25px oklch(0 0 0 / 6%);
+}
+
+.dark .stat-card {
+  background: oklch(0.16 0 0);
+  border-color: oklch(0.28 0.01 200);
+}
+
+.dark .stat-card:hover {
+  border-color: oklch(0.40 0.05 200);
+}
+
+/* ============================================
+   LOADING SKELETON
+   ============================================ */
+.skeleton {
+  background: linear-gradient(90deg, oklch(0.96 0 0) 25%, oklch(0.94 0 0) 50%, oklch(0.96 0 0) 75%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s infinite;
+}
+
+.dark .skeleton {
+  background: linear-gradient(90deg, oklch(0.22 0 0) 25%, oklch(0.26 0 0) 50%, oklch(0.22 0 0) 75%);
+  background-size: 200% 100%;
+}
+
+@keyframes skeleton-loading {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ============================================
+   WIN RATE PROGRESS BAR
+   ============================================ */
+.win-rate-bar {
+  background: oklch(0.92 0 0);
+  border-radius: 100px;
+  overflow: hidden;
+}
+
+.win-rate-fill {
+  background: linear-gradient(90deg, oklch(0.55 0.22 25) 0%, oklch(0.65 0.18 145) 100%);
+  height: 100%;
+  border-radius: 100px;
+  transition: width 1s ease-out;
+}
+
+/* ============================================
+   NOTIFICATION BADGE
+   ============================================ */
+.notification-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: oklch(0.55 0.22 25);
+  color: white;
+  font-size: 10px;
+  font-weight: 600;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ============================================
+   FOCUS STATES
+   ============================================ */
+input:focus, 
+textarea:focus, 
+select:focus {
+  outline: none;
+  border-color: oklch(0.55 0.2 200);
+  box-shadow: 0 0 0 3px oklch(0.55 0.2 200 / 10%);
+}
+
+.dark input:focus,
+.dark textarea:focus,
+.dark select:focus {
+  border-color: oklch(0.60 0.2 200);
+  box-shadow: 0 0 0 3px oklch(0.60 0.2 200 / 15%);
+}
+
+/* ============================================
+   LINE CLAMP
+   ============================================ */
+.line-clamp-1 {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ============================================
+   RESPONSIVE TYPOGRAPHY
+   ============================================ */
+@media (max-width: 640px) {
+  h1 { font-size: 1.875rem; }
+  h2 { font-size: 1.5rem; }
+  h3 { font-size: 1.25rem; }
+}
+
+/* ============================================
+   PAGE TRANSITIONS
+   ============================================ */
+.page-transition {
+  opacity: 0;
+  animation: fadeIn 0.4s ease-out forwards;
+}
+
+/* ============================================
+   PRICING HIGHLIGHT
+   ============================================ */
+.pricing-highlight {
+  border: 2px solid oklch(0.55 0.2 200);
+  position: relative;
+}
+
+.pricing-highlight::before {
+  content: 'Most Popular';
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: oklch(0.55 0.2 200);
+  color: white;
+  padding: 4px 16px;
+  border-radius: 100px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* ============================================
+   TRUST INDICATOR STRIP
+   ============================================ */
+.trust-strip {
+  background: oklch(0.97 0.005 200);
+  border-top: 1px solid oklch(0.92 0.01 200);
+  border-bottom: 1px solid oklch(0.92 0.01 200);
+}
+
+.dark .trust-strip {
+  background: oklch(0.18 0.005 200);
+  border-color: oklch(0.28 0.01 200);
+}
+
+/* ============================================
+   UGANDA FLAG COLORS (for patriotic elements)
+   ============================================ */
+.uganda-gradient {
+  background: linear-gradient(180deg, 
+    oklch(0.70 0.20 145) 0%, 
+    oklch(0.70 0.20 145) 33%, 
+    oklch(0.98 0 0) 33%, 
+    oklch(0.98 0 0) 66%, 
+    oklch(0.55 0.22 25) 66%
+  );
+}
