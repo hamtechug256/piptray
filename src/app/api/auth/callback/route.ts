@@ -2,21 +2,21 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 
 export async function GET(request: NextRequest) {
+  const requestUrl = new URL(request.url);
+  const code = requestUrl.searchParams.get('code');
+  const error = requestUrl.searchParams.get('error');
+  const errorDescription = requestUrl.searchParams.get('error_description');
+
+  // Handle OAuth errors
+  if (error) {
+    console.error('OAuth error:', error, errorDescription);
+    return NextResponse.redirect(
+      `${requestUrl.origin}/login?error=${encodeURIComponent(errorDescription || error)}`
+    );
+  }
+
   try {
     const supabase = await createClient();
-    const searchParams = request.nextUrl.searchParams;
-    
-    const code = searchParams.get('code');
-    const error = searchParams.get('error');
-    const errorDescription = searchParams.get('error_description');
-
-    // Handle OAuth errors
-    if (error) {
-      console.error('OAuth error:', error, errorDescription);
-      return NextResponse.redirect(
-        new URL(`/login?error=${encodeURIComponent(errorDescription || error)}`, request.url)
-      );
-    }
 
     // Exchange code for session
     if (code) {
@@ -25,97 +25,86 @@ export async function GET(request: NextRequest) {
       if (exchangeError) {
         console.error('Code exchange error:', exchangeError);
         return NextResponse.redirect(
-          new URL(`/login?error=${encodeURIComponent(exchangeError.message)}`, request.url)
+          `${requestUrl.origin}/login?error=${encodeURIComponent(exchangeError.message)}`
         );
       }
 
-      // Get user after exchange
+      // Get the user
       const { data: { user }, error: userError } = await supabase.auth.getUser();
-      
-      if (userError) {
+
+      if (userError || !user) {
         console.error('Get user error:', userError);
         return NextResponse.redirect(
-          new URL('/login?error=Failed to get user', request.url)
+          `${requestUrl.origin}/login?error=Failed to authenticate`
         );
       }
-      
-      if (user) {
-        // Check if user exists in users table
-        const { data: existingUser, error: fetchError } = await supabase
+
+      // Try to create/update user record (ignore errors)
+      try {
+        // Check if user exists
+        const { data: existingUser } = await supabase
           .from('users')
-          .select('*')
+          .select('id, role')
           .eq('id', user.id)
           .single();
 
-        if (fetchError && fetchError.code !== 'PGRST116') {
-          // PGRST116 = no rows found, which is fine for new users
-          console.error('Fetch user error:', fetchError);
-        }
-
-        // Get role from user metadata or default to subscriber
-        const userRole = user.user_metadata?.role || 'subscriber';
-
         if (!existingUser) {
-          // Create new user record
+          // Create new user
+          const newUser = {
+            id: user.id,
+            email: user.email!,
+            name: user.user_metadata?.full_name || user.user_metadata?.name || user.email!.split('@')[0],
+            role: 'subscriber' as const,
+            avatar: user.user_metadata?.avatar_url || user.user_metadata?.picture || null,
+            emailVerified: true,
+            emailVerifiedAt: new Date().toISOString(),
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          };
+
           const { error: insertError } = await supabase
             .from('users')
-            .insert({
-              id: user.id,
-              email: user.email!,
-              name: user.user_metadata?.full_name || user.user_metadata?.name || user.email!.split('@')[0],
-              role: userRole,
-              avatar: user.user_metadata?.avatar_url || user.user_metadata?.picture,
-              email_verified: true,
-              email_verified_at: new Date().toISOString(),
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-            });
+            .insert(newUser);
 
           if (insertError) {
-            console.error('Insert user error:', insertError);
-            // Continue anyway - user can still access dashboard
+            console.error('User insert error:', insertError);
           }
 
-          // If user is a provider, create provider record
-          if (userRole === 'provider') {
-            await supabase
-              .from('providers')
-              .insert({
-                user_id: user.id,
-                display_name: user.user_metadata?.full_name || user.user_metadata?.name || user.email!.split('@')[0],
-                is_active: true,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString(),
-              });
-          }
+          // Redirect new users to subscriber dashboard
+          return NextResponse.redirect(`${requestUrl.origin}/dashboard/subscriber`);
         } else {
-          // Update existing user - mark email as verified
+          // Update existing user
           await supabase
             .from('users')
-            .update({ 
-              email_verified: true, 
-              email_verified_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
+            .update({
+              emailVerified: true,
+              emailVerifiedAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
             })
             .eq('id', user.id);
-        }
 
-        // Determine redirect based on role
-        const redirectPath = existingUser?.role || userRole;
-        
-        if (redirectPath === 'admin') {
-          return NextResponse.redirect(new URL('/dashboard/admin', request.url));
-        } else if (redirectPath === 'provider') {
-          return NextResponse.redirect(new URL('/dashboard/provider', request.url));
+          // Redirect based on role
+          const role = existingUser.role || 'subscriber';
+          if (role === 'admin') {
+            return NextResponse.redirect(`${requestUrl.origin}/dashboard/admin`);
+          } else if (role === 'provider') {
+            return NextResponse.redirect(`${requestUrl.origin}/dashboard/provider`);
+          }
+          return NextResponse.redirect(`${requestUrl.origin}/dashboard/subscriber`);
         }
-        return NextResponse.redirect(new URL('/dashboard/subscriber', request.url));
+      } catch (dbError) {
+        console.error('Database error:', dbError);
+        // Still redirect to dashboard even if DB fails
+        return NextResponse.redirect(`${requestUrl.origin}/dashboard`);
       }
     }
 
-    // Default redirect
-    return NextResponse.redirect(new URL('/dashboard', request.url));
-  } catch (error) {
-    console.error('Callback error:', error);
-    return NextResponse.redirect(new URL('/login?error=Authentication failed', request.url));
+    // No code, redirect to login
+    return NextResponse.redirect(`${requestUrl.origin}/login`);
+  } catch (err) {
+    console.error('Callback error:', err);
+    return NextResponse.redirect(
+      `${requestUrl.origin}/login?error=Authentication failed`
+    );
   }
 }
