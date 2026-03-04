@@ -58,9 +58,10 @@ export async function GET(request: NextRequest) {
 
       // Try to create/update user record
       try {
+        // ALWAYS fetch fresh role from database
         const { data: existingUser, error: fetchError } = await supabase
           .from('users')
-          .select('id, role')
+          .select('id, role, email, name, avatar')
           .eq('id', user.id)
           .single();
 
@@ -91,7 +92,7 @@ export async function GET(request: NextRequest) {
           console.log('Redirecting to subscriber dashboard');
           return NextResponse.redirect(`${requestUrl.origin}/dashboard/subscriber`);
         } else {
-          // Update existing user
+          // Update existing user last login
           console.log('Updating existing user...');
           await supabase
             .from('users')
@@ -102,8 +103,9 @@ export async function GET(request: NextRequest) {
             })
             .eq('id', user.id);
 
+          // Use the role from database (not cached)
           const role = existingUser.role || 'subscriber';
-          console.log('Redirecting to dashboard for role:', role);
+          console.log('Fresh role from DB:', role);
           
           if (role === 'admin') {
             return NextResponse.redirect(`${requestUrl.origin}/dashboard/admin`);

@@ -45,6 +45,7 @@ export default function AuthCallbackPage() {
         let userRole = 'subscriber';
 
         try {
+          // ALWAYS fetch fresh data from database
           const { data: existingUser, error: fetchError } = await supabase
             .from('users')
             .select('id, role, email, name, avatar')
@@ -52,9 +53,9 @@ export default function AuthCallbackPage() {
             .single();
 
           if (existingUser) {
-            console.log('Found existing user:', existingUser);
+            console.log('Found existing user with role:', existingUser.role);
             userProfile = existingUser;
-            userRole = existingUser.role || 'subscriber';
+            userRole = existingUser.role || 'subscriber'; // Use the role from DB!
             
             // Update user
             await supabase

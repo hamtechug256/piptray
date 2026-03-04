@@ -54,13 +54,30 @@ export default function LoginPage() {
 
       // Successful login - get user profile
       if (data.user) {
-        const { data: profile } = await supabase
+        // ALWAYS fetch fresh role from database (don't use cached data)
+        const { data: profile, error: profileError } = await supabase
           .from('users')
           .select('*')
           .eq('id', data.user.id)
           .single();
 
+        if (profileError) {
+          console.error('Error fetching profile:', profileError);
+        }
+
         const role = profile?.role || 'subscriber';
+        const userData = {
+          id: data.user.id,
+          email: data.user.email!,
+          name: profile?.name || data.user.user_metadata?.full_name || data.user.user_metadata?.name || data.user.email!.split('@')[0],
+          role: role,
+          avatar: profile?.avatar || data.user.user_metadata?.avatar_url || null,
+          emailVerified: !!profile?.emailVerified || !!data.user.email_confirmed_at,
+        };
+
+        // Update localStorage with fresh data
+        localStorage.setItem('piptray_user', JSON.stringify(userData));
+        console.log('Fresh user data from DB:', userData);
         
         if (role === 'admin') {
           router.push('/dashboard/admin');
