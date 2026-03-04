@@ -5,15 +5,13 @@ import { motion } from 'framer-motion';
 import {
   Bell,
   CheckCircle,
-  AlertCircle,
   Info,
   TrendingUp,
   Users,
   CreditCard,
   Trash2,
-  Settings,
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useUser } from '@/hooks/use-mounted';
@@ -31,42 +29,79 @@ export default function NotificationsPage() {
   const { user } = useUser();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+
+  const fetchNotifications = async () => {
+    if (!user) return;
+    
+    try {
+      const response = await fetch('/api/notifications', {
+        headers: { 'Authorization': `Bearer ${user.id}` },
+      });
+      const data = await response.json();
+      
+      if (data.success) {
+        setNotifications(data.data || []);
+      }
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchNotifications = async () => {
-      if (!user) return;
-      
-      try {
-        const response = await fetch('/api/notifications', {
-          headers: { 'Authorization': `Bearer ${user.id}` },
-        });
-        const data = await response.json();
-        
-        if (data.success) {
-          setNotifications(data.data || []);
-        }
-      } catch (error) {
-        console.error('Error fetching notifications:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchNotifications();
   }, [user]);
 
   const markAsRead = async (id: string) => {
-    setNotifications(prev =>
-      prev.map(n => n.id === id ? { ...n, read: true } : n)
-    );
+    setActionLoading(id);
+    try {
+      await fetch(`/api/notifications/${id}/read`, {
+        method: 'PATCH',
+        headers: { 'Authorization': `Bearer ${user?.id}` },
+      });
+      
+      setNotifications(prev =>
+        prev.map(n => n.id === id ? { ...n, read: true } : n)
+      );
+    } catch (error) {
+      console.error('Error marking as read:', error);
+    } finally {
+      setActionLoading(null);
+    }
   };
 
-  const markAllAsRead = () => {
-    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+  const markAllAsRead = async () => {
+    setActionLoading('all');
+    try {
+      await fetch('/api/notifications/read-all', {
+        method: 'PATCH',
+        headers: { 'Authorization': `Bearer ${user?.id}` },
+      });
+      
+      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    } catch (error) {
+      console.error('Error marking all as read:', error);
+    } finally {
+      setActionLoading(null);
+    }
   };
 
-  const deleteNotification = (id: string) => {
-    setNotifications(prev => prev.filter(n => n.id !== id));
+  const deleteNotification = async (id: string) => {
+    setActionLoading(id);
+    try {
+      await fetch(`/api/notifications/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${user?.id}` },
+      });
+      
+      setNotifications(prev => prev.filter(n => n.id !== id));
+    } catch (error) {
+      console.error('Error deleting notification:', error);
+    } finally {
+      setActionLoading(null);
+    }
   };
 
   const getIcon = (type: string) => {
@@ -80,6 +115,21 @@ export default function NotificationsPage() {
       default:
         return <Info className="w-5 h-5 text-gray-500" />;
     }
+  };
+
+  const getTimeAgo = (date: string) => {
+    const now = new Date();
+    const past = new Date(date);
+    const diffMs = now.getTime() - past.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
+    return past.toLocaleDateString();
   };
 
   const unreadCount = notifications.filter(n => !n.read).length;
@@ -103,8 +153,16 @@ export default function NotificationsPage() {
           </p>
         </div>
         {unreadCount > 0 && (
-          <Button variant="outline" onClick={markAllAsRead}>
-            <CheckCircle className="w-4 h-4 mr-2" />
+          <Button 
+            variant="outline" 
+            onClick={markAllAsRead}
+            disabled={actionLoading === 'all'}
+          >
+            {actionLoading === 'all' ? (
+              <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin mr-2" />
+            ) : (
+              <CheckCircle className="w-4 h-4 mr-2" />
+            )}
             Mark all as read
           </Button>
         )}
@@ -143,7 +201,7 @@ export default function NotificationsPage() {
                         {notification.message}
                       </p>
                       <p className="text-xs text-muted-foreground mt-2">
-                        {new Date(notification.createdAt).toLocaleString()}
+                        {getTimeAgo(notification.createdAt)}
                       </p>
                     </div>
                     <div className="flex gap-2">
@@ -152,14 +210,23 @@ export default function NotificationsPage() {
                           variant="ghost"
                           size="icon"
                           onClick={() => markAsRead(notification.id)}
+                          disabled={actionLoading === notification.id}
+                          title="Mark as read"
                         >
-                          <CheckCircle className="w-4 h-4" />
+                          {actionLoading === notification.id ? (
+                            <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                          ) : (
+                            <CheckCircle className="w-4 h-4" />
+                          )}
                         </Button>
                       )}
                       <Button
                         variant="ghost"
                         size="icon"
                         onClick={() => deleteNotification(notification.id)}
+                        disabled={actionLoading === notification.id}
+                        title="Delete"
+                        className="text-muted-foreground hover:text-destructive"
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>

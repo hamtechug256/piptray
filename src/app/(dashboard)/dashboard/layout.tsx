@@ -53,6 +53,7 @@ const navigation = {
     { name: 'Dashboard', href: '/dashboard', icon: Home },
     { name: 'My Subscriptions', href: '/dashboard/subscriptions', icon: CreditCard },
     { name: 'Signals Feed', href: '/dashboard/signals', icon: Signal },
+    { name: 'Notifications', href: '/dashboard/notifications', icon: Bell },
     { name: 'Settings', href: '/dashboard/settings', icon: Settings },
   ],
   provider: [
@@ -60,6 +61,7 @@ const navigation = {
     { name: 'My Signals', href: '/dashboard/signals', icon: Signal },
     { name: 'Subscribers', href: '/dashboard/subscribers', icon: Users },
     { name: 'Analytics', href: '/dashboard/analytics', icon: BarChart3 },
+    { name: 'Notifications', href: '/dashboard/notifications', icon: Bell },
     { name: 'Settings', href: '/dashboard/settings', icon: Settings },
   ],
   admin: [
@@ -67,6 +69,7 @@ const navigation = {
     { name: 'Users', href: '/dashboard/users', icon: Users },
     { name: 'Providers', href: '/dashboard/providers', icon: TrendingUp },
     { name: 'Payments', href: '/dashboard/payments', icon: Wallet },
+    { name: 'Notifications', href: '/dashboard/notifications', icon: Bell },
     { name: 'Settings', href: '/dashboard/settings', icon: Settings },
   ],
 };
