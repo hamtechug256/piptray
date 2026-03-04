@@ -121,7 +121,11 @@ export default function AdminProvidersPage() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${adminUser.id}`,
         },
-        body: JSON.stringify({ providerId, ...updates }),
+        body: JSON.stringify({ 
+          providerId: providerId,
+          isActive: updates.isActive,
+          isVerified: updates.isVerified 
+        }),
       });
       
       const data = await response.json();

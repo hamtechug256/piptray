@@ -4,7 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-// GET - List all providers
+// GET - List all providers (including inactive)
 export async function GET(request: NextRequest) {
   try {
     const authHeader = request.headers.get('authorization');
@@ -31,54 +31,61 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    // Get query params
-    const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '20');
-    const search = searchParams.get('search') || '';
-    const tier = searchParams.get('tier') || '';
-    const status = searchParams.get('status') || '';
-    const offset = (page - 1) * limit;
-
-    // Build query
-    let query = supabase
+    // Get ALL providers (including inactive) - using snake_case column names
+    const { data: providers, error } = await supabase
       .from('providers')
-      .select('*, user:users(id, email, name)', { count: 'exact' });
-
-    if (search) {
-      query = query.ilike('displayName', `%${search}%`);
-    }
-
-    if (tier) {
-      query = query.eq('tier', tier);
-    }
-
-    if (status === 'active') {
-      query = query.eq('isActive', true);
-    } else if (status === 'suspended') {
-      query = query.eq('isActive', false);
-    } else if (status === 'verified') {
-      query = query.eq('isVerified', true);
-    }
-
-    const { data: providers, count, error } = await query
-      .order('createdAt', { ascending: false })
-      .range(offset, offset + limit - 1);
+      .select(`
+        id,
+        user_id,
+        display_name,
+        bio,
+        avatar,
+        tier,
+        win_rate,
+        total_signals,
+        total_pips,
+        subscribers,
+        monthly_price,
+        average_rating,
+        total_reviews,
+        is_verified,
+        is_active,
+        pairs,
+        created_at,
+        user:users(id, email, name, avatar)
+      `)
+      .order('created_at', { ascending: false });
 
     if (error) {
       console.error('Error fetching providers:', error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
+    // Transform to camelCase for frontend
+    const transformedProviders = (providers || []).map(p => ({
+      id: p.id,
+      userId: p.user_id,
+      displayName: p.display_name,
+      bio: p.bio,
+      avatar: p.avatar,
+      tier: p.tier,
+      winRate: p.win_rate || 0,
+      totalSignals: p.total_signals || 0,
+      totalPips: p.total_pips || 0,
+      subscribers: p.subscribers || 0,
+      monthlyPrice: p.monthly_price || 0,
+      averageRating: p.average_rating || 0,
+      totalReviews: p.total_reviews || 0,
+      isVerified: p.is_verified || false,
+      isActive: p.is_active || false,
+      pairs: p.pairs || [],
+      createdAt: p.created_at,
+      user: p.user,
+    }));
+
     return NextResponse.json({
       success: true,
-      data: providers,
-      pagination: {
-        page,
-        limit,
-        total: count || 0,
-        totalPages: Math.ceil((count || 0) / limit),
-      },
+      data: transformedProviders,
     });
   } catch (error) {
     console.error('Admin providers error:', error);
@@ -86,7 +93,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// PATCH - Update provider
+// PATCH - Update provider status
 export async function PATCH(request: NextRequest) {
   try {
     const authHeader = request.headers.get('authorization');
@@ -120,13 +127,14 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Provider ID is required' }, { status: 400 });
     }
 
-    const updateData: Record<string, unknown> = { updatedAt: new Date().toISOString() };
+    // Build update with snake_case column names
+    const updateData: Record<string, unknown> = { updated_at: new Date().toISOString() };
     
-    if (isActive !== undefined) updateData.isActive = isActive;
+    if (isActive !== undefined) updateData.is_active = isActive;
     if (isVerified !== undefined) {
-      updateData.isVerified = isVerified;
+      updateData.is_verified = isVerified;
       if (isVerified) {
-        updateData.verifiedAt = new Date().toISOString();
+        updateData.verified_at = new Date().toISOString();
       }
     }
     if (tier) updateData.tier = tier;
