@@ -1,6 +1,6 @@
 'use client';
 
-import { useSyncExternalStore, useState, useEffect, useCallback } from 'react';
+import { useSyncExternalStore, useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
 
@@ -63,11 +63,18 @@ export function useUser() {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
   const mounted = useMounted();
+  const isLoggingOut = useRef(false);
 
   useEffect(() => {
     if (!mounted) return;
 
     const checkSession = async () => {
+      // Skip if we're in the process of logging out
+      if (isLoggingOut.current) {
+        console.log('useUser: Skipping session check - logging out');
+        return;
+      }
+
       console.log('useUser: Checking session...');
       
       // First check localStorage (set by auth callback)
@@ -88,6 +95,12 @@ export function useUser() {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         
+        // Double-check logout flag after async operation
+        if (isLoggingOut.current) {
+          console.log('useUser: Abandoning session check - logout in progress');
+          return;
+        }
+
         if (session?.user) {
           console.log('useUser: Found Supabase session:', session.user.email);
           
@@ -129,10 +142,13 @@ export function useUser() {
       async (event, session) => {
         console.log('useUser: Auth state changed:', event);
         
-        if (event === 'SIGNED_OUT') {
+        if (event === 'SIGNED_OUT' || isLoggingOut.current) {
+          console.log('useUser: Clearing user data');
           window.localStorage.removeItem('piptray_user');
           setUser(null);
-        } else if (session?.user) {
+          setLoading(false);
+          isLoggingOut.current = false;
+        } else if (event === 'SIGNED_IN' && session?.user && !isLoggingOut.current) {
           const { data: profile } = await supabase
             .from('users')
             .select('*')
@@ -151,6 +167,7 @@ export function useUser() {
           window.localStorage.setItem('piptray_user', JSON.stringify(userData));
           setUser(userData);
         }
+        // Ignore TOKEN_REFRESHED and other events during logout
       }
     );
 
@@ -161,20 +178,38 @@ export function useUser() {
 
   const login = useCallback((userData: AuthUser) => {
     console.log('useUser: Login called for:', userData.email);
+    isLoggingOut.current = false;
     window.localStorage.setItem('piptray_user', JSON.stringify(userData));
     setUser(userData);
   }, []);
 
   const logout = useCallback(async () => {
     console.log('useUser: Logout called');
+    
+    // Set flag immediately to prevent re-checking
+    isLoggingOut.current = true;
+    
+    // Clear state and localStorage immediately
+    setUser(null);
+    window.localStorage.removeItem('piptray_user');
+    setLoading(false);
+    
+    // Then sign out from Supabase (in background)
     try {
-      await supabase.auth.signOut();
+      await supabase.auth.signOut({ scope: 'global' });
+      console.log('useUser: Supabase signOut complete');
     } catch (error) {
       console.error('Supabase logout error:', error);
     }
-    window.localStorage.removeItem('piptray_user');
-    setUser(null);
+    
+    // Reset flag after a short delay
+    setTimeout(() => {
+      isLoggingOut.current = false;
+    }, 1000);
+    
+    // Navigate to home
     router.push('/');
+    router.refresh();
   }, [router]);
 
   return { user, setUser, logout, login, loading };
