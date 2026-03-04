@@ -92,14 +92,62 @@ export function useUser() {
           console.log('useUser: Found Supabase session:', session.user.email);
           
           // ALWAYS fetch profile from database to get fresh role
-          const { data: profile, error: profileError } = await supabase
+          // First try by ID
+          let profile = null;
+          const { data: profileById, error: profileError } = await supabase
             .from('users')
             .select('*')
             .eq('id', session.user.id)
             .single();
 
-          if (profileError) {
-            console.error('useUser: Error fetching profile:', profileError);
+          if (profileError?.code === 'PGRST116' || !profileById) {
+            // User not found by ID, try by email
+            console.log('useUser: User not found by ID, trying by email...');
+            const { data: profileByEmail, error: emailError } = await supabase
+              .from('users')
+              .select('*')
+              .eq('email', session.user.email!)
+              .single();
+
+            if (profileByEmail) {
+              console.log('useUser: Found user by email, updating ID...');
+              profile = profileByEmail;
+              
+              // Update the user record with correct auth ID
+              await supabase
+                .from('users')
+                .update({ 
+                  id: session.user.id,
+                  emailVerified: true,
+                  emailVerifiedAt: new Date().toISOString(),
+                  updatedAt: new Date().toISOString(),
+                })
+                .eq('email', session.user.email!);
+            } else {
+              // User doesn't exist at all - create them
+              console.log('useUser: User not found, creating new user record...');
+              const newUser = {
+                id: session.user.id,
+                email: session.user.email!,
+                name: session.user.user_metadata?.full_name || session.user.user_metadata?.name || session.user.email!.split('@')[0],
+                role: 'subscriber' as const,
+                avatar: session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture || null,
+                emailVerified: true,
+                emailVerifiedAt: new Date().toISOString(),
+              };
+              
+              const { error: insertError } = await supabase
+                .from('users')
+                .insert(newUser);
+              
+              if (!insertError) {
+                profile = newUser;
+              } else {
+                console.error('useUser: Error creating user:', insertError);
+              }
+            }
+          } else {
+            profile = profileById;
           }
 
           console.log('useUser: Fresh role from DB:', profile?.role);
@@ -162,11 +210,56 @@ export function useUser() {
           hasFetched.current = false;
         } else if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session?.user && !isLoggingOut.current) {
           // ALWAYS fetch fresh role from database on sign in
-          const { data: profile } = await supabase
+          // First try by ID
+          let profile = null;
+          const { data: profileById, error: profileError } = await supabase
             .from('users')
             .select('*')
             .eq('id', session.user.id)
             .single();
+
+          if (profileError?.code === 'PGRST116' || !profileById) {
+            // Try by email
+            const { data: profileByEmail } = await supabase
+              .from('users')
+              .select('*')
+              .eq('email', session.user.email!)
+              .single();
+
+            if (profileByEmail) {
+              profile = profileByEmail;
+              // Update with correct auth ID
+              await supabase
+                .from('users')
+                .update({ 
+                  id: session.user.id,
+                  emailVerified: true,
+                  emailVerifiedAt: new Date().toISOString(),
+                })
+                .eq('email', session.user.email!);
+            } else {
+              // Create new user
+              const newUser = {
+                id: session.user.id,
+                email: session.user.email!,
+                name: session.user.user_metadata?.name || session.user.email!.split('@')[0],
+                role: 'subscriber' as const,
+                avatar: session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture || null,
+                emailVerified: true,
+                emailVerifiedAt: new Date().toISOString(),
+              };
+              
+              const { error: insertError } = await supabase
+                .from('users')
+                .insert(newUser);
+              
+              if (!insertError) {
+                profile = newUser;
+              }
+            }
+          } else {
+            profile = profileById;
+          }
 
           console.log('useUser: Auth change - fresh role from DB:', profile?.role);
 
