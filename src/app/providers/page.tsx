@@ -1,17 +1,15 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import {
   TrendingUp,
   Search,
-  Filter,
   Star,
   Users,
-  ChevronDown,
-  SlidersHorizontal,
   X,
+  SlidersHorizontal,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -20,7 +18,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { useMounted } from '@/hooks/use-mounted';
-import { ALL_PAIRS, FOREX_MAJORS, COMMODITIES, CRYPTO, INDICES } from '@/lib/constants/pairs';
 import {
   Select,
   SelectContent,
@@ -29,135 +26,22 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 
-// Demo providers data
-const DEMO_PROVIDERS = [
-  {
-    id: '1',
-    displayName: 'FX Pro Uganda',
-    bio: 'Professional forex trader with 5+ years experience. Specializing in EUR/USD and XAU/USD with a focus on technical analysis and price action.',
-    avatar: null,
-    tier: 'verified' as const,
-    winRate: 72,
-    totalPips: 2450,
-    totalSignals: 156,
-    monthlyPrice: 100000,
-    weeklyPrice: 30000,
-    quarterlyPrice: 270000,
-    yearlyPrice: 900000,
-    averageRating: 4.5,
-    totalReviews: 38,
-    pairs: ['EUR/USD', 'XAU/USD', 'GBP/USD'],
-    timeframes: ['day', 'swing'],
-    subscribers: 45,
-    isVerified: true,
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: '2',
-    displayName: 'Crypto Alpha Signals',
-    bio: 'Cryptocurrency trading expert. Technical analysis and on-chain data combined for high-probability setups in the volatile crypto market.',
-    avatar: null,
-    tier: 'top' as const,
-    winRate: 78,
-    totalPips: 3200,
-    totalSignals: 89,
-    monthlyPrice: 180000,
-    weeklyPrice: 50000,
-    quarterlyPrice: 480000,
-    yearlyPrice: 1600000,
-    averageRating: 4.8,
-    totalReviews: 67,
-    pairs: ['BTC/USD', 'ETH/USD', 'SOL/USD'],
-    timeframes: ['swing', 'position'],
-    subscribers: 82,
-    isVerified: true,
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: '3',
-    displayName: 'Gold Rush Trading',
-    bio: 'XAU/USD specialist. Pure price action analysis with key levels. Over 200 signals with consistent performance.',
-    avatar: null,
-    tier: 'verified' as const,
-    winRate: 68,
-    totalPips: 1890,
-    totalSignals: 234,
-    monthlyPrice: 85000,
-    weeklyPrice: 25000,
-    quarterlyPrice: 230000,
-    yearlyPrice: 800000,
-    averageRating: 4.3,
-    totalReviews: 29,
-    pairs: ['XAU/USD', 'XAG/USD'],
-    timeframes: ['scalp', 'day'],
-    subscribers: 38,
-    isVerified: true,
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: '4',
-    displayName: 'Forex Mastery UG',
-    bio: 'Comprehensive forex analysis covering major and cross pairs. Combining fundamental and technical analysis for consistent results.',
-    avatar: null,
-    tier: 'registered' as const,
-    winRate: 65,
-    totalPips: 1200,
-    totalSignals: 78,
-    monthlyPrice: 65000,
-    weeklyPrice: 20000,
-    quarterlyPrice: 175000,
-    yearlyPrice: 600000,
-    averageRating: 4.1,
-    totalReviews: 15,
-    pairs: ['EUR/USD', 'GBP/USD', 'USD/JPY', 'AUD/USD'],
-    timeframes: ['day', 'swing'],
-    subscribers: 22,
-    isVerified: false,
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: '5',
-    displayName: 'Index Hunter',
-    bio: 'Specializing in US30, US500, and NAS100. Precision entries on major indices with clear risk management.',
-    avatar: null,
-    tier: 'verified' as const,
-    winRate: 71,
-    totalPips: 890,
-    totalSignals: 45,
-    monthlyPrice: 120000,
-    weeklyPrice: 35000,
-    quarterlyPrice: 320000,
-    yearlyPrice: 1100000,
-    averageRating: 4.6,
-    totalReviews: 21,
-    pairs: ['US30', 'US500', 'NAS100'],
-    timeframes: ['day'],
-    subscribers: 31,
-    isVerified: true,
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: '6',
-    displayName: 'Swing Profit Pro',
-    bio: 'Swing trading specialist capturing multi-day moves. Patient approach with high reward-to-risk ratios.',
-    avatar: null,
-    tier: 'new' as const,
-    winRate: 62,
-    totalPips: 560,
-    totalSignals: 28,
-    monthlyPrice: 50000,
-    weeklyPrice: 15000,
-    quarterlyPrice: 135000,
-    yearlyPrice: 480000,
-    averageRating: 3.9,
-    totalReviews: 8,
-    pairs: ['EUR/USD', 'GBP/JPY', 'XAU/USD'],
-    timeframes: ['swing'],
-    subscribers: 14,
-    isVerified: false,
-    createdAt: new Date().toISOString(),
-  },
-];
+interface Provider {
+  id: string;
+  displayName: string;
+  bio: string | null;
+  avatar: string | null;
+  tier: string;
+  winRate: number;
+  totalPips: number;
+  totalSignals: number;
+  monthlyPrice: number;
+  averageRating: number;
+  totalReviews: number;
+  pairs: string[];
+  subscribers: number;
+  isVerified: boolean;
+}
 
 const tierColors: Record<string, string> = {
   new: 'badge-new',
@@ -177,15 +61,36 @@ const tierIcons: Record<string, string> = {
 
 export default function ProvidersPage() {
   const mounted = useMounted();
+  const [providers, setProviders] = useState<Provider[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState<'winRate' | 'subscribers' | 'averageRating'>('winRate');
   const [filterPair, setFilterPair] = useState<string>('all');
   const [filterTier, setFilterTier] = useState<string>('all');
   const [showFilters, setShowFilters] = useState(false);
 
+  useEffect(() => {
+    const fetchProviders = async () => {
+      try {
+        const response = await fetch('/api/providers');
+        const data = await response.json();
+        
+        if (data.success) {
+          setProviders(data.data || []);
+        }
+      } catch (error) {
+        console.error('Error fetching providers:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProviders();
+  }, []);
+
   // Filter and sort providers
   const filteredProviders = useMemo(() => {
-    let result = [...DEMO_PROVIDERS];
+    let result = [...providers];
 
     // Search filter
     if (search) {
@@ -193,13 +98,13 @@ export default function ProvidersPage() {
       result = result.filter(
         (p) =>
           p.displayName.toLowerCase().includes(searchLower) ||
-          p.pairs.some((pair) => pair.toLowerCase().includes(searchLower))
+          p.pairs?.some((pair) => pair.toLowerCase().includes(searchLower))
       );
     }
 
     // Pair filter
     if (filterPair !== 'all') {
-      result = result.filter((p) => p.pairs.includes(filterPair));
+      result = result.filter((p) => p.pairs?.includes(filterPair));
     }
 
     // Tier filter
@@ -222,26 +127,28 @@ export default function ProvidersPage() {
     });
 
     return result;
-  }, [search, sortBy, filterPair, filterTier]);
+  }, [providers, search, sortBy, filterPair, filterTier]);
 
-  if (!mounted) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
-      </div>
-    );
-  }
+  // Get unique pairs from all providers
+  const allPairs = useMemo(() => {
+    return [...new Set(providers.flatMap((p) => p.pairs || []))].sort();
+  }, [providers]);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-UG', {
       style: 'currency',
       currency: 'UGX',
       minimumFractionDigits: 0,
-    }).format(price);
+    }).format(price || 0);
   };
 
-  // Get unique pairs from all providers
-  const allPairs = [...new Set(DEMO_PROVIDERS.flatMap((p) => p.pairs))].sort();
+  if (!mounted || loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -370,101 +277,115 @@ export default function ProvidersPage() {
         </div>
 
         {/* Providers Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredProviders.map((provider, i) => (
-            <motion.div
-              key={provider.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.05 }}
-            >
-              <Card className="h-full card-hover overflow-hidden">
-                <CardContent className="p-0">
-                  {/* Header */}
-                  <div className="p-6 pb-4">
-                    <div className="flex items-start gap-3 mb-4">
-                      <Avatar className="w-14 h-14">
-                        <AvatarImage src={provider.avatar || undefined} />
-                        <AvatarFallback className="bg-primary text-primary-foreground text-lg">
-                          {provider.displayName.charAt(0)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-lg truncate">{provider.displayName}</h3>
-                        <Badge className={tierColors[provider.tier]} variant="secondary">
-                          {tierIcons[provider.tier]}{' '}
-                          {provider.tier.charAt(0).toUpperCase() + provider.tier.slice(1)}
-                        </Badge>
-                      </div>
-                    </div>
-
-                    <p className="text-sm text-muted-foreground line-clamp-2 mb-4">{provider.bio}</p>
-
-                    {/* Pairs */}
-                    <div className="flex flex-wrap gap-1">
-                      {provider.pairs.slice(0, 4).map((pair) => (
-                        <Badge key={pair} variant="outline" className="text-xs">
-                          {pair}
-                        </Badge>
-                      ))}
-                      {provider.pairs.length > 4 && (
-                        <Badge variant="outline" className="text-xs">
-                          +{provider.pairs.length - 4}
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Stats */}
-                  <div className="grid grid-cols-3 gap-4 p-4 bg-muted/30 border-t border-border">
-                    <div className="text-center">
-                      <div className="text-xl font-bold text-green-600 dark:text-green-400">
-                        {provider.winRate}%
-                      </div>
-                      <div className="text-xs text-muted-foreground">Win Rate</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-xl font-bold">{provider.totalPips.toLocaleString()}</div>
-                      <div className="text-xs text-muted-foreground">Pips</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-xl font-bold">{provider.totalSignals}</div>
-                      <div className="text-xs text-muted-foreground">Signals</div>
-                    </div>
-                  </div>
-
-                  {/* Price & CTA */}
-                  <div className="p-4 border-t border-border">
-                    <div className="flex items-center justify-between mb-3">
-                      <div>
-                        <span className="text-lg font-bold">{formatPrice(provider.monthlyPrice)}</span>
-                        <span className="text-muted-foreground text-sm">/month</span>
-                      </div>
-                      <div className="flex items-center gap-1 text-yellow-500">
-                        <Star className="w-4 h-4 fill-current" />
-                        <span className="font-medium">{provider.averageRating}</span>
-                        <span className="text-muted-foreground text-sm">
-                          ({provider.totalReviews})
-                        </span>
-                      </div>
-                    </div>
-                    <Link href={`/provider/${provider.id}`}>
-                      <Button className="w-full btn-primary">View Profile</Button>
-                    </Link>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          ))}
-        </div>
-
-        {filteredProviders.length === 0 && (
+        {filteredProviders.length === 0 ? (
           <div className="text-center py-12">
             <Users className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
             <h3 className="font-medium mb-2">No providers found</h3>
             <p className="text-muted-foreground text-sm">
-              Try adjusting your search or filters
+              {providers.length === 0 
+                ? 'Be the first to become a signal provider!'
+                : 'Try adjusting your search or filters'
+              }
             </p>
+            {providers.length === 0 && (
+              <Link href="/register?role=provider">
+                <Button className="mt-4 btn-primary">
+                  Apply as Provider
+                </Button>
+              </Link>
+            )}
+          </div>
+        ) : (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredProviders.map((provider, i) => (
+              <motion.div
+                key={provider.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.05 }}
+              >
+                <Card className="h-full card-hover overflow-hidden">
+                  <CardContent className="p-0">
+                    {/* Header */}
+                    <div className="p-6 pb-4">
+                      <div className="flex items-start gap-3 mb-4">
+                        <Avatar className="w-14 h-14">
+                          <AvatarImage src={provider.avatar || undefined} />
+                          <AvatarFallback className="bg-primary text-primary-foreground text-lg">
+                            {provider.displayName.charAt(0)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold text-lg truncate">{provider.displayName}</h3>
+                          <Badge className={tierColors[provider.tier] || 'badge-new'} variant="secondary">
+                            {tierIcons[provider.tier] || '🔰'}{' '}
+                            {provider.tier?.charAt(0).toUpperCase() + provider.tier?.slice(1) || 'New'}
+                          </Badge>
+                        </div>
+                      </div>
+
+                      <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
+                        {provider.bio || 'Professional signal provider'}
+                      </p>
+
+                      {/* Pairs */}
+                      {provider.pairs && provider.pairs.length > 0 && (
+                        <div className="flex flex-wrap gap-1">
+                          {provider.pairs.slice(0, 4).map((pair) => (
+                            <Badge key={pair} variant="outline" className="text-xs">
+                              {pair}
+                            </Badge>
+                          ))}
+                          {provider.pairs.length > 4 && (
+                            <Badge variant="outline" className="text-xs">
+                              +{provider.pairs.length - 4}
+                            </Badge>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Stats */}
+                    <div className="grid grid-cols-3 gap-4 p-4 bg-muted/30 border-t border-border">
+                      <div className="text-center">
+                        <div className="text-xl font-bold text-green-600 dark:text-green-400">
+                          {provider.winRate}%
+                        </div>
+                        <div className="text-xs text-muted-foreground">Win Rate</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-xl font-bold">{provider.totalPips?.toLocaleString() || 0}</div>
+                        <div className="text-xs text-muted-foreground">Pips</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-xl font-bold">{provider.totalSignals || 0}</div>
+                        <div className="text-xs text-muted-foreground">Signals</div>
+                      </div>
+                    </div>
+
+                    {/* Price & CTA */}
+                    <div className="p-4 border-t border-border">
+                      <div className="flex items-center justify-between mb-3">
+                        <div>
+                          <span className="text-lg font-bold">{formatPrice(provider.monthlyPrice)}</span>
+                          <span className="text-muted-foreground text-sm">/month</span>
+                        </div>
+                        <div className="flex items-center gap-1 text-yellow-500">
+                          <Star className="w-4 h-4 fill-current" />
+                          <span className="font-medium">{provider.averageRating || 0}</span>
+                          <span className="text-muted-foreground text-sm">
+                            ({provider.totalReviews || 0})
+                          </span>
+                        </div>
+                      </div>
+                      <Link href={`/provider/${provider.id}`}>
+                        <Button className="w-full btn-primary">View Profile</Button>
+                      </Link>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
           </div>
         )}
       </div>
