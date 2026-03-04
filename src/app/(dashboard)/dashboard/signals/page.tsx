@@ -13,6 +13,8 @@ import {
   XCircle,
   Target,
   AlertCircle,
+  Edit,
+  ExternalLink,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -297,7 +299,7 @@ export default function SignalsPage() {
                     </div>
 
                     {/* Result */}
-                    <div className="text-right ml-4">
+                    <div className="text-right ml-4 flex flex-col items-end gap-2">
                       {signal.outcome !== 'pending' && (
                         <p className={`text-lg font-bold ${
                           signal.outcome === 'win' ? 'text-green-600' : 'text-red-600'
@@ -308,6 +310,14 @@ export default function SignalsPage() {
                       <p className="text-xs text-muted-foreground">
                         {new Date(signal.createdAt).toLocaleDateString()}
                       </p>
+                      {isProvider && (
+                        <Link href={`/dashboard/signals/${signal.id}`}>
+                          <Button variant="outline" size="sm" className="mt-1">
+                            <Edit className="w-3 h-3 mr-1" />
+                            Edit
+                          </Button>
+                        </Link>
+                      )}
                     </div>
                   </div>
 

@@ -44,6 +44,7 @@ import {
 } from '@/components/ui/dialog';
 import { useUser } from '@/hooks/use-mounted';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 interface Provider {
   id: string;
@@ -87,16 +88,19 @@ export default function AdminProvidersPage() {
     
     setLoading(true);
     try {
-      const response = await fetch('/api/providers', {
+      const response = await fetch('/api/admin/providers', {
         headers: { 'Authorization': `Bearer ${adminUser.id}` },
       });
       const data = await response.json();
       
       if (data.success) {
         setProviders(data.data || []);
+      } else {
+        toast.error('Failed to load providers');
       }
     } catch (error) {
       console.error('Error fetching providers:', error);
+      toast.error('Failed to load providers');
     } finally {
       setLoading(false);
     }
@@ -129,9 +133,20 @@ export default function AdminProvidersPage() {
         if (selectedProvider?.id === providerId) {
           setSelectedProvider({ ...selectedProvider, ...updates });
         }
+        
+        // Show success toast
+        if (updates.isVerified !== undefined) {
+          toast.success(updates.isVerified ? 'Provider verified successfully' : 'Verification removed');
+        }
+        if (updates.isActive !== undefined) {
+          toast.success(updates.isActive ? 'Provider activated successfully' : 'Provider suspended');
+        }
+      } else {
+        toast.error(data.error || 'Failed to update provider');
       }
     } catch (error) {
       console.error('Error updating provider:', error);
+      toast.error('An error occurred while updating');
     } finally {
       setUpdating(false);
     }

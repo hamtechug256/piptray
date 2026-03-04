@@ -29,6 +29,7 @@ model User {
   subscriptions   Subscription[]
   payments        Payment[]
   notifications   Notification[]
+  reviews         Review[]
 }
 
 model Provider {
@@ -66,6 +67,7 @@ model Provider {
   signals           Signal[]
   subscriptions     Subscription[]
   payments          Payment[]
+  reviews           Review[]
 }
 
 model Signal {
@@ -183,6 +185,25 @@ model ProviderApplication {
   updatedAt               DateTime  @updatedAt
 
   user                    User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Review {
+  id          String   @id @default(cuid())
+  providerId  String
+  userId      String
+  rating      Int      // 1-5 stars
+  title       String?
+  comment     String?
+  isVerified  Boolean  @default(false) // Verified purchase
+  isPublic    Boolean  @default(true)
+  helpfulCount Int     @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  provider    Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([providerId, userId]) // One review per user per provider
 }
 
 model PlatformSettings {
