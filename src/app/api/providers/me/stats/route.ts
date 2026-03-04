@@ -119,10 +119,20 @@ export async function GET(request: NextRequest) {
         totalReviews,
         
         // Provider info
+        id: provider.id,
         displayName: provider.display_name,
         tier: provider.tier,
         isVerified: provider.is_verified,
         isActive: provider.is_active,
+        bio: provider.bio,
+        pairs: provider.pairs,
+        timeframes: provider.timeframes,
+        
+        // Payment info
+        binanceWallet: provider.binance_wallet,
+        ethereumWallet: provider.ethereum_wallet,
+        mtnMomoNumber: provider.mtn_momo_number,
+        airtelMoneyNumber: provider.airtel_money_number,
         
         // Recent data
         recentSignals: recentSignals || [],
