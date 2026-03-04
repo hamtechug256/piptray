@@ -17,6 +17,9 @@ import {
   Menu,
   X,
   Wallet,
+  FileText,
+  DollarSign,
+  Shield,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -42,12 +45,12 @@ const navigation = {
     { name: 'Settings', href: '/dashboard/settings', icon: Settings },
   ],
   admin: [
-    { name: 'Dashboard', href: '/dashboard', icon: Home },
-    { name: 'Users', href: '/dashboard/users', icon: Users },
-    { name: 'Providers', href: '/dashboard/providers', icon: TrendingUp },
-    { name: 'Payments', href: '/dashboard/payments', icon: Wallet },
-    { name: 'Notifications', href: '/dashboard/notifications', icon: Bell },
-    { name: 'Settings', href: '/dashboard/settings', icon: Settings },
+    { name: 'Dashboard', href: '/dashboard/admin', icon: Home },
+    { name: 'Users', href: '/dashboard/admin/users', icon: Users },
+    { name: 'Providers', href: '/dashboard/admin/providers', icon: TrendingUp },
+    { name: 'Applications', href: '/dashboard/admin/applications', icon: FileText },
+    { name: 'Payments', href: '/dashboard/admin/payments', icon: DollarSign },
+    { name: 'Settings', href: '/dashboard/admin/settings', icon: Settings },
   ],
 };
 

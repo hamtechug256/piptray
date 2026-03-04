@@ -1,9 +1,6 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -14,19 +11,194 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id              String   @id @default(cuid())
+  email           String   @unique
+  name            String?
+  password        String?
+  role            String   @default("subscriber") // subscriber, provider, admin
+  avatar          String?
+  emailVerified   Boolean  @default(false)
+  emailVerifiedAt DateTime?
+  googleId        String?  @unique
+  lastLoginAt     DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  provider        Provider?
+  applications    ProviderApplication[]
+  subscriptions   Subscription[]
+  payments        Payment[]
+  notifications   Notification[]
 }
 
-model Post {
-  id        String   @id @default(cuid())
+model Provider {
+  id                 String   @id @default(cuid())
+  userId             String   @unique
+  displayName        String
+  bio                String?
+  avatar             String?
+  pairs              String   @default("")
+  timeframes         String   @default("")
+  currency           String   @default("UGX")
+  monthlyPrice       Float    @default(0)
+  weeklyPrice        Float    @default(0)
+  quarterlyPrice     Float    @default(0)
+  yearlyPrice        Float    @default(0)
+  subscribers        Int      @default(0)
+  isVerified         Boolean  @default(false)
+  verifiedAt         DateTime?
+  isActive           Boolean  @default(true)
+  totalSignals       Int      @default(0)
+  winRate            Float    @default(0)
+  totalPips          Float    @default(0)
+  avgRR              Float    @default(0)
+  tier               String   @default("new") // new, registered, verified, top, elite
+  averageRating      Float    @default(0)
+  totalReviews       Int      @default(0)
+  binanceWallet      String?
+  ethereumWallet     String?
+  mtnMomoNumber      String?
+  airtelMoneyNumber  String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  user              User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  signals           Signal[]
+  subscriptions     Subscription[]
+  payments          Payment[]
+}
+
+model Signal {
+  id             String    @id @default(cuid())
+  providerId     String
+  pair           String
+  direction      String    // BUY, SELL
+  timeframe      String
+  analysis       String?
+  status         String    @default("active") // active, tp1_hit, tp2_hit, tp3_hit, sl_hit, closed
+  entryPrice     Float
+  entryZoneLow   Float?
+  entryZoneHigh  Float?
+  stopLoss       Float
+  takeProfit1    Float
+  takeProfit2    Float?
+  takeProfit3    Float?
+  risk           String    @default("medium") // low, medium, high
+  chartImage     String?
+  outcome        String?   // win, loss, breakeven
+  resultPips     Float?
+  isFree         Boolean   @default(false)
+  isPublished    Boolean   @default(true)
+  viewsCount     Int       @default(0)
+  closedAt       DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  provider       Provider  @relation(fields: [providerId], references: [id], onDelete: Cascade)
+}
+
+model Subscription {
+  id            String    @id @default(cuid())
+  userId        String
+  providerId    String
+  status        String    @default("active") // active, expired, cancelled
+  plan          String    // weekly, monthly, quarterly, yearly
+  amount        Float
+  currency      String    @default("UGX")
+  startDate     DateTime  @default(now())
+  endDate       DateTime
+  paymentMethod String?
+  paymentStatus String    @default("pending")
+  paymentId     String?
+  cancelledAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider      Provider  @relation(fields: [providerId], references: [id], onDelete: Cascade)
+}
+
+model Payment {
+  id              String    @id @default(cuid())
+  userId          String
+  providerId      String?
+  subscriptionId  String?
+  amount          Float
+  platformFee     Float     @default(0)
+  providerAmount  Float     @default(0)
+  currency        String    @default("UGX")
+  type            String    // subscription, withdrawal
+  status          String    @default("pending") // pending, confirmed, failed, refunded
+  paymentMethod   String
+  transactionId   String?
+  txHash          String?
+  walletAddress   String?
+  phoneNumber     String?
+  momoReference   String?
+  confirmedAt     DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider        Provider? @relation(fields: [providerId], references: [id])
+}
+
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String
+  type      String    // new_signal, tp_hit, subscription_expiring, payment_confirmed, new_subscriber, new_review, system
   title     String
-  content   String?
-  published Boolean  @default(false)
-  authorId  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  message   String
+  data      String?   // JSON string
+  isRead    Boolean   @default(false)
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model ProviderApplication {
+  id                      String    @id @default(cuid())
+  userId                  String
+  status                  String    @default("pending") // pending, under_review, approved, rejected
+  tradingExperience       Int       @default(0)
+  experienceLevel         String    @default("beginner") // beginner, intermediate, advanced, professional
+  tradingStyle            String    @default("") // JSON array
+  marketsTraded           String    @default("") // JSON array
+  averageMonthlySignals   Int       @default(0)
+  estimatedWinRate        Float?
+  trackRecordDescription  String?
+  telegramChannel         String?
+  twitterHandle           String?
+  tradingViewProfile      String?
+  otherSocialLinks        String?
+  motivationStatement     String
+  identityDocumentUrl     String?
+  tradingStatementUrl     String?
+  reviewedBy              String?
+  reviewedAt              DateTime?
+  adminNotes              String?
+  rejectionReason         String?
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+
+  user                    User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model PlatformSettings {
+  id                    String   @id @default(cuid())
+  platformName          String   @default("PipTray")
+  platformDescription   String?
+  contactEmail          String?
+  platformFeePercent    Float    @default(10)
+  enableCrypto          Boolean  @default(true)
+  enableMtnMomo         Boolean  @default(true)
+  enableAirtelMoney     Boolean  @default(true)
+  binanceWalletAddress  String?
+  ethereumWalletAddress String?
+  mtnMomoNumber         String?
+  airtelMoneyNumber     String?
+  emailNotifications    Boolean  @default(true)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
 }
