@@ -6,13 +6,14 @@
 
 CREATE TABLE IF NOT EXISTS notifications (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    "userId" UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    "userId" TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     type VARCHAR(50) NOT NULL DEFAULT 'system',
     title VARCHAR(255) NOT NULL,
     message TEXT NOT NULL,
+    "data" JSONB DEFAULT NULL,
     "isRead" BOOLEAN DEFAULT FALSE,
-    "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    "updatedAt" TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    "readAt" TIMESTAMP WITH TIME ZONE DEFAULT NULL,
+    "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- Create index for faster queries
@@ -26,31 +27,20 @@ ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
 -- Create RLS policies
 CREATE POLICY "Users can view their own notifications"
     ON notifications FOR SELECT
-    USING ("userId" = auth.uid()::text OR "userId" = auth.uid());
+    USING ("userId" = auth.uid()::text);
 
 CREATE POLICY "Users can update their own notifications"
     ON notifications FOR UPDATE
-    USING ("userId" = auth.uid()::text OR "userId" = auth.uid());
+    USING ("userId" = auth.uid()::text);
 
 CREATE POLICY "Users can delete their own notifications"
     ON notifications FOR DELETE
-    USING ("userId" = auth.uid()::text OR "userId" = auth.uid());
+    USING ("userId" = auth.uid()::text);
 
 CREATE POLICY "Service role can insert notifications"
     ON notifications FOR INSERT
     WITH CHECK (true);
 
--- Create trigger for updated_at
-CREATE OR REPLACE FUNCTION update_notification_updated_at()
-RETURNS TRIGGER AS $$
-BEGIN
-    NEW."updatedAt" = NOW();
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-DROP TRIGGER IF EXISTS notification_updated_at ON notifications;
-CREATE TRIGGER notification_updated_at
-    BEFORE UPDATE ON notifications
-    FOR EACH ROW
-    EXECUTE FUNCTION update_notification_updated_at();
+CREATE POLICY "Service role can manage all notifications"
+    ON notifications FOR ALL
+    USING (true);

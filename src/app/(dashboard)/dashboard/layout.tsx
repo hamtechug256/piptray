@@ -222,7 +222,7 @@ function NotificationBell({ user }: { user: any }) {
                 <div
                   key={notification.id}
                   className={cn(
-                    'p-4 cursor-pointer hover:bg-muted/50 transition-colors relative',
+                    'group p-4 cursor-pointer hover:bg-muted/50 transition-colors relative',
                     !notification.isRead && 'bg-primary/5'
                   )}
                   onClick={() => markAsRead(notification.id)}
@@ -251,10 +251,10 @@ function NotificationBell({ user }: { user: any }) {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="w-6 h-6 absolute top-3 right-3 opacity-0 group-hover:opacity-100"
+                      className="w-6 h-6 absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity"
                       onClick={(e) => deleteNotification(notification.id, e)}
                     >
-                      <Trash2 className="w-3 h-3" />
+                      <Trash2 className="w-3 h-3 text-muted-foreground hover:text-destructive" />
                     </Button>
                   </div>
                 </div>
