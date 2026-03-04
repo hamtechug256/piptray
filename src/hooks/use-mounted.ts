@@ -57,13 +57,14 @@ interface AuthUser {
   emailVerified?: boolean;
 }
 
-// Hook for getting user - prioritize localStorage for reliability
+// Hook for getting user - ALWAYS fetch fresh role from database
 export function useUser() {
   const router = useRouter();
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
   const mounted = useMounted();
   const isLoggingOut = useRef(false);
+  const hasFetched = useRef(false);
 
   useEffect(() => {
     if (!mounted) return;
@@ -77,21 +78,7 @@ export function useUser() {
 
       console.log('useUser: Checking session...');
       
-      // First check localStorage (set by auth callback)
-      try {
-        const storedUser = window.localStorage.getItem('piptray_user');
-        if (storedUser) {
-          const parsedUser = JSON.parse(storedUser) as AuthUser;
-          console.log('useUser: Found stored user:', parsedUser.email);
-          setUser(parsedUser);
-          setLoading(false);
-          return;
-        }
-      } catch (e) {
-        console.error('useUser: Error reading localStorage:', e);
-      }
-
-      // Fallback: check Supabase session
+      // ALWAYS check Supabase session first and fetch fresh role from database
       try {
         const { data: { session } } = await supabase.auth.getSession();
         
@@ -104,12 +91,18 @@ export function useUser() {
         if (session?.user) {
           console.log('useUser: Found Supabase session:', session.user.email);
           
-          // Try to get profile
-          const { data: profile } = await supabase
+          // ALWAYS fetch profile from database to get fresh role
+          const { data: profile, error: profileError } = await supabase
             .from('users')
             .select('*')
             .eq('id', session.user.id)
             .single();
+
+          if (profileError) {
+            console.error('useUser: Error fetching profile:', profileError);
+          }
+
+          console.log('useUser: Fresh role from DB:', profile?.role);
 
           const userData: AuthUser = {
             id: session.user.id,
@@ -122,12 +115,30 @@ export function useUser() {
 
           // Store for future use
           window.localStorage.setItem('piptray_user', JSON.stringify(userData));
+          console.log('useUser: Setting user with role:', userData.role);
           setUser(userData);
           setLoading(false);
+          hasFetched.current = true;
           return;
         }
       } catch (e) {
         console.error('useUser: Supabase error:', e);
+      }
+
+      // No session found - check localStorage as fallback (for initial render)
+      if (!hasFetched.current) {
+        try {
+          const storedUser = window.localStorage.getItem('piptray_user');
+          if (storedUser) {
+            const parsedUser = JSON.parse(storedUser) as AuthUser;
+            console.log('useUser: Using stored user as fallback:', parsedUser.email, 'role:', parsedUser.role);
+            setUser(parsedUser);
+            setLoading(false);
+            return;
+          }
+        } catch (e) {
+          console.error('useUser: Error reading localStorage:', e);
+        }
       }
 
       // No session found
@@ -148,12 +159,16 @@ export function useUser() {
           setUser(null);
           setLoading(false);
           isLoggingOut.current = false;
-        } else if (event === 'SIGNED_IN' && session?.user && !isLoggingOut.current) {
+          hasFetched.current = false;
+        } else if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session?.user && !isLoggingOut.current) {
+          // ALWAYS fetch fresh role from database on sign in
           const { data: profile } = await supabase
             .from('users')
             .select('*')
             .eq('id', session.user.id)
             .single();
+
+          console.log('useUser: Auth change - fresh role from DB:', profile?.role);
 
           const userData: AuthUser = {
             id: session.user.id,
@@ -167,7 +182,6 @@ export function useUser() {
           window.localStorage.setItem('piptray_user', JSON.stringify(userData));
           setUser(userData);
         }
-        // Ignore TOKEN_REFRESHED and other events during logout
       }
     );
 
@@ -179,6 +193,7 @@ export function useUser() {
   const login = useCallback((userData: AuthUser) => {
     console.log('useUser: Login called for:', userData.email);
     isLoggingOut.current = false;
+    hasFetched.current = true;
     window.localStorage.setItem('piptray_user', JSON.stringify(userData));
     setUser(userData);
   }, []);
@@ -188,6 +203,7 @@ export function useUser() {
     
     // Set flag immediately to prevent re-checking
     isLoggingOut.current = true;
+    hasFetched.current = false;
     
     // Clear state and localStorage immediately
     setUser(null);
