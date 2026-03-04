@@ -124,8 +124,12 @@ export default function AdminDashboard() {
   // Fetch applications
   useEffect(() => {
     const fetchData = async () => {
-      if (!user || user.role !== 'admin') {
-        router.push('/dashboard');
+      // Wait for user to be loaded
+      if (!user) return;
+
+      // Only fetch data if user is admin
+      if (user.role !== 'admin') {
+        setLoading(false);
         return;
       }
 
@@ -154,7 +158,7 @@ export default function AdminDashboard() {
     };
 
     fetchData();
-  }, [user, router]);
+  }, [user]);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-UG', {
@@ -263,8 +267,17 @@ export default function AdminDashboard() {
     }
   };
 
-  // Check admin access
-  if (!loading && user?.role !== 'admin') {
+  // Show loading while checking access
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+
+  // Check admin access - only render content after loading is complete
+  if (!user || user.role !== 'admin') {
     return (
       <div className="max-w-2xl mx-auto">
         <Card className="border-2 border-red-500/50 bg-red-50 dark:bg-red-950/20">
@@ -272,7 +285,7 @@ export default function AdminDashboard() {
             <AlertTriangle className="w-16 h-16 text-red-500 mx-auto mb-4" />
             <h2 className="text-2xl font-bold mb-2">Access Denied</h2>
             <p className="text-muted-foreground mb-6">
-              You don&apos;t have permission to access this page.
+              You don&apos;t have permission to access this page. This area is restricted to administrators only.
             </p>
             <Button onClick={() => router.push('/dashboard')}>
               Return to Dashboard
