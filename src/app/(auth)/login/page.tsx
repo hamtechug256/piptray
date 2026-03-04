@@ -42,26 +42,13 @@ export default function LoginPage() {
       });
 
       if (signInError) {
-        // If sign in fails, use demo mode
-        console.log('Sign in failed, using demo mode:', signInError.message);
-        
-        // Store demo user in localStorage
-        const demoUser = {
-          id: `demo_${Date.now()}`,
-          name: email.split('@')[0],
-          email: email,
-          role: email.includes('admin') ? 'admin' as const : email.includes('provider') ? 'provider' as const : 'subscriber' as const,
-        };
-        localStorage.setItem('piptray_user', JSON.stringify(demoUser));
-        
-        // Redirect based on role
-        if (demoUser.role === 'admin') {
-          router.push('/dashboard/admin');
-        } else if (demoUser.role === 'provider') {
-          router.push('/dashboard/provider');
+        // Show actual error to user
+        if (signInError.message.includes('Invalid login credentials')) {
+          setError('Invalid email or password. Please try again.');
         } else {
-          router.push('/dashboard/subscriber');
+          setError(signInError.message);
         }
+        setLoading(false);
         return;
       }
 
@@ -97,9 +84,8 @@ export default function LoginPage() {
 
     try {
       const redirectUrl = `${window.location.origin}/auth/callback`;
-      console.log('Starting Google OAuth with redirect:', redirectUrl);
 
-      const { data, error: oauthError } = await supabase.auth.signInWithOAuth({
+      const { error: oauthError } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: redirectUrl,
@@ -112,8 +98,6 @@ export default function LoginPage() {
         setGoogleLoading(false);
         return;
       }
-
-      console.log('OAuth initiated:', data);
       // The page will redirect to Google, so we don't need to do anything else
     } catch (err) {
       console.error('Google login error:', err);
@@ -216,7 +200,7 @@ export default function LoginPage() {
                     {showPassword ? (
                       <EyeOff className="h-4 w-4" />
                     ) : (
-                      <Eye className="h-4 w-4" />
+                      <Eye className="h-4 h-4" />
                     )}
                   </button>
                 </div>
@@ -303,17 +287,6 @@ export default function LoginPage() {
               </Link>
             </p>
           </CardFooter>
-        </Card>
-
-        {/* Demo Credentials */}
-        <Card className="mt-6 border-dashed">
-          <CardContent className="pt-4">
-            <p className="text-sm text-muted-foreground text-center">
-              <strong className="text-foreground">Demo Mode:</strong> Use any email/password to sign in.
-              <br />
-              Include &quot;admin&quot; or &quot;provider&quot; in email for different roles.
-            </p>
-          </CardContent>
         </Card>
 
         {/* Back to Home */}
