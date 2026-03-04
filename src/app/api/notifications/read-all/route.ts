@@ -23,9 +23,9 @@ export async function PATCH(request: NextRequest) {
 
     const { error } = await supabase
       .from('notifications')
-      .update({ read: true })
+      .update({ isRead: true })
       .eq('userId', userId)
-      .eq('read', false);
+      .eq('isRead', false);
 
     if (error) {
       console.error('Error marking all as read:', error);

@@ -21,7 +21,7 @@ interface Notification {
   type: 'signal' | 'subscription' | 'payment' | 'system';
   title: string;
   message: string;
-  read: boolean;
+  isRead: boolean;
   createdAt: string;
 }
 
@@ -63,7 +63,7 @@ export default function NotificationsPage() {
       });
       
       setNotifications(prev =>
-        prev.map(n => n.id === id ? { ...n, read: true } : n)
+        prev.map(n => n.id === id ? { ...n, isRead: true } : n)
       );
     } catch (error) {
       console.error('Error marking as read:', error);
@@ -80,7 +80,7 @@ export default function NotificationsPage() {
         headers: { 'Authorization': `Bearer ${user?.id}` },
       });
       
-      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+      setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
     } catch (error) {
       console.error('Error marking all as read:', error);
     } finally {
@@ -132,7 +132,7 @@ export default function NotificationsPage() {
     return past.toLocaleDateString();
   };
 
-  const unreadCount = notifications.filter(n => !n.read).length;
+  const unreadCount = notifications.filter(n => !n.isRead).length;
 
   if (loading) {
     return (
@@ -185,7 +185,7 @@ export default function NotificationsPage() {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   className={`p-4 hover:bg-muted/50 transition-colors ${
-                    !notification.read ? 'bg-primary/5' : ''
+                    !notification.isRead ? 'bg-primary/5' : ''
                   }`}
                 >
                   <div className="flex items-start gap-4">
@@ -193,7 +193,7 @@ export default function NotificationsPage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <h4 className="font-medium">{notification.title}</h4>
-                        {!notification.read && (
+                        {!notification.isRead && (
                           <Badge variant="secondary" className="text-xs">New</Badge>
                         )}
                       </div>
@@ -205,7 +205,7 @@ export default function NotificationsPage() {
                       </p>
                     </div>
                     <div className="flex gap-2">
-                      {!notification.read && (
+                      {!notification.isRead && (
                         <Button
                           variant="ghost"
                           size="icon"

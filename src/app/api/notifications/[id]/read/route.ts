@@ -42,7 +42,7 @@ export async function PATCH(
 
     const { error } = await supabase
       .from('notifications')
-      .update({ read: true, updatedAt: new Date().toISOString() })
+      .update({ isRead: true, updatedAt: new Date().toISOString() })
       .eq('id', id);
 
     if (error) {

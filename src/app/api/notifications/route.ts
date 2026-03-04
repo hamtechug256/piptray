@@ -21,7 +21,6 @@ export async function GET(request: NextRequest) {
 
     const supabase = createClient<Database>(supabaseUrl, supabaseServiceKey);
 
-    // Check if notifications table exists
     const { data: notifications, error } = await supabase
       .from('notifications')
       .select('*')
@@ -78,7 +77,7 @@ export async function POST(request: NextRequest) {
         type,
         title,
         message,
-        read: false,
+        isRead: false,
         createdAt: new Date().toISOString(),
       })
       .select()
@@ -117,9 +116,9 @@ export async function PATCH(request: NextRequest) {
 
     const { error } = await supabase
       .from('notifications')
-      .update({ read: true })
+      .update({ isRead: true })
       .eq('userId', userId)
-      .eq('read', false);
+      .eq('isRead', false);
 
     if (error) {
       console.error('Error marking all as read:', error);

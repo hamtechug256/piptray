@@ -44,7 +44,7 @@ interface Notification {
   type: 'signal' | 'subscription' | 'payment' | 'system';
   title: string;
   message: string;
-  read: boolean;
+  isRead: boolean;
   createdAt: string;
 }
 
@@ -106,11 +106,11 @@ function NotificationBell({ user }: { user: any }) {
     return () => clearInterval(interval);
   }, [user]);
 
-  const unreadCount = notifications.filter(n => !n.read).length;
+  const unreadCount = notifications.filter(n => !n.isRead).length;
 
   const markAsRead = async (id: string) => {
     setNotifications(prev =>
-      prev.map(n => n.id === id ? { ...n, read: true } : n)
+      prev.map(n => n.id === id ? { ...n, isRead: true } : n)
     );
     
     try {
@@ -124,7 +124,7 @@ function NotificationBell({ user }: { user: any }) {
   };
 
   const markAllAsRead = async () => {
-    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
     
     try {
       await fetch('/api/notifications/read-all', {
@@ -223,7 +223,7 @@ function NotificationBell({ user }: { user: any }) {
                   key={notification.id}
                   className={cn(
                     'p-4 cursor-pointer hover:bg-muted/50 transition-colors relative',
-                    !notification.read && 'bg-primary/5'
+                    !notification.isRead && 'bg-primary/5'
                   )}
                   onClick={() => markAsRead(notification.id)}
                 >
@@ -233,11 +233,11 @@ function NotificationBell({ user }: { user: any }) {
                       <div className="flex items-center gap-2">
                         <p className={cn(
                           'text-sm',
-                          !notification.read && 'font-medium'
+                          !notification.isRead && 'font-medium'
                         )}>
                           {notification.title}
                         </p>
-                        {!notification.read && (
+                        {!notification.isRead && (
                           <span className="w-2 h-2 bg-primary rounded-full flex-shrink-0" />
                         )}
                       </div>
