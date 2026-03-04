@@ -12,6 +12,8 @@ import {
   ArrowLeft,
   Check,
   AlertCircle,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -55,6 +57,10 @@ export default function ProviderSettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [providerId, setProviderId] = useState<string | null>(null);
+  
+  // Visibility toggles for sensitive fields
+  const [showBinanceWallet, setShowBinanceWallet] = useState(false);
+  const [showEthereumWallet, setShowEthereumWallet] = useState(false);
 
   const [profile, setProfile] = useState<ProviderSettings>({
     id: '',
@@ -464,22 +470,52 @@ export default function ProviderSettingsPage() {
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="binanceWallet">Binance Wallet (BEP20)</Label>
-                  <Input
-                    id="binanceWallet"
-                    placeholder="0x..."
-                    value={profile.binanceWallet}
-                    onChange={(e) => setProfile(prev => ({ ...prev, binanceWallet: e.target.value }))}
-                  />
+                  <div className="relative">
+                    <Input
+                      id="binanceWallet"
+                      type={showBinanceWallet ? 'text' : 'password'}
+                      placeholder="0x..."
+                      value={profile.binanceWallet}
+                      onChange={(e) => setProfile(prev => ({ ...prev, binanceWallet: e.target.value }))}
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowBinanceWallet(!showBinanceWallet)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      {showBinanceWallet ? (
+                        <EyeOff className="w-4 h-4" />
+                      ) : (
+                        <Eye className="w-4 h-4" />
+                      )}
+                    </button>
+                  </div>
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="ethereumWallet">Ethereum Wallet (ERC20)</Label>
-                  <Input
-                    id="ethereumWallet"
-                    placeholder="0x..."
-                    value={profile.ethereumWallet}
-                    onChange={(e) => setProfile(prev => ({ ...prev, ethereumWallet: e.target.value }))}
-                  />
+                  <div className="relative">
+                    <Input
+                      id="ethereumWallet"
+                      type={showEthereumWallet ? 'text' : 'password'}
+                      placeholder="0x..."
+                      value={profile.ethereumWallet}
+                      onChange={(e) => setProfile(prev => ({ ...prev, ethereumWallet: e.target.value }))}
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowEthereumWallet(!showEthereumWallet)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      {showEthereumWallet ? (
+                        <EyeOff className="w-4 h-4" />
+                      ) : (
+                        <Eye className="w-4 h-4" />
+                      )}
+                    </button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
