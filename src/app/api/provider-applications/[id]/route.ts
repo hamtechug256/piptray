@@ -36,13 +36,13 @@ export async function GET(
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    // Fetch application with camelCase joins
+    // Fetch application with snake_case column names
     const { data: application, error } = await supabase
       .from('provider_applications')
       .select(`
         *,
-        user:users!provider_applications_userId_fkey(id, email, name, avatar),
-        reviewer:users!provider_applications_reviewedBy_fkey(id, email, name)
+        user:users(id, email, name, avatar),
+        reviewer:users(id, email, name)
       `)
       .eq('id', id)
       .single();
@@ -52,7 +52,7 @@ export async function GET(
     }
 
     // Only allow admin or application owner to view
-    if (user.role !== 'admin' && application.userId !== userId) {
+    if (user.role !== 'admin' && application.user_id !== userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
@@ -111,16 +111,16 @@ export async function PATCH(
       return NextResponse.json({ error: 'Application not found' }, { status: 404 });
     }
 
-    // Update application status with camelCase
+    // Update application status with SNAKE_CASE column names
     const { error: updateError } = await supabase
       .from('provider_applications')
       .update({
         status,
-        adminNotes: adminNotes || null,
-        rejectionReason: status === 'rejected' ? rejectionReason : null,
-        reviewedBy: userId,
-        reviewedAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+        admin_notes: adminNotes || null,
+        rejection_reason: status === 'rejected' ? rejectionReason : null,
+        reviewed_by: userId,
+        reviewed_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       })
       .eq('id', id);
 
@@ -136,52 +136,57 @@ export async function PATCH(
         .from('users')
         .update({ 
           role: 'provider',
-          updatedAt: new Date().toISOString() 
+          updated_at: new Date().toISOString() 
         })
-        .eq('id', application.userId);
+        .eq('id', application.user_id);
 
       if (userUpdateError) {
         console.error('Error updating user role:', userUpdateError);
       }
 
-      // Create provider profile with camelCase
+      // Get user data for display name
       const { data: userData } = await supabase
         .from('users')
         .select('name, email, avatar')
-        .eq('id', application.userId)
+        .eq('id', application.user_id)
         .single();
 
+      // Create provider profile with SNAKE_CASE column names
       const { error: providerError } = await supabase
         .from('providers')
         .insert({
-          userId: application.userId,
-          displayName: userData?.name || userData?.email?.split('@')[0] || 'New Provider',
+          user_id: application.user_id,
+          display_name: userData?.name || userData?.email?.split('@')[0] || 'New Provider',
           avatar: userData?.avatar || null,
           bio: null,
           pairs: [],
           timeframes: [],
           currency: 'UGX',
-          monthlyPrice: 0,
-          weeklyPrice: 0,
-          quarterlyPrice: 0,
-          yearlyPrice: 0,
+          monthly_price: 0,
+          weekly_price: 0,
+          quarterly_price: 0,
+          yearly_price: 0,
           subscribers: 0,
-          isVerified: false,
-          verifiedAt: null,
-          isActive: true,
-          totalSignals: 0,
-          winRate: 0,
-          totalPips: 0,
-          avgRR: 0,
+          is_verified: false,
+          verified_at: null,
+          is_active: true,  // ACTIVE BY DEFAULT WHEN APPROVED
+          total_signals: 0,
+          win_rate: 0,
+          total_pips: 0,
+          avg_rr: 0,
           tier: 'new',
-          averageRating: 0,
-          totalReviews: 0,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
+          average_rating: 0,
+          total_reviews: 0,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
         });
 
       if (providerError) {
         console.error('Error creating provider profile:', providerError);
+        // Try to provide more details
+        return NextResponse.json({ 
+          error: 'Failed to create provider profile: ' + providerError.message 
+        }, { status: 500 });
       }
     }
 

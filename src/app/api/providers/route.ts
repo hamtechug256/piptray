@@ -14,10 +14,27 @@ export async function GET(request: NextRequest) {
     const sortBy = searchParams.get('sortBy') || 'win_rate';
     const search = searchParams.get('search');
 
+    // Use explicit column names with snake_case
     let query = supabase
       .from('providers')
       .select(`
-        *,
+        id,
+        user_id,
+        display_name,
+        bio,
+        avatar,
+        tier,
+        win_rate,
+        total_signals,
+        total_pips,
+        monthly_price,
+        average_rating,
+        total_reviews,
+        pairs,
+        subscribers,
+        is_verified,
+        is_active,
+        created_at,
         user:users(id, name, email, avatar)
       `)
       .eq('is_active', true);
@@ -54,6 +71,28 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Transform to camelCase for frontend
+    const transformedData = (data || []).map(p => ({
+      id: p.id,
+      userId: p.user_id,
+      displayName: p.display_name,
+      bio: p.bio,
+      avatar: p.avatar,
+      tier: p.tier,
+      winRate: p.win_rate || 0,
+      totalSignals: p.total_signals || 0,
+      totalPips: p.total_pips || 0,
+      monthlyPrice: p.monthly_price || 0,
+      averageRating: p.average_rating || 0,
+      totalReviews: p.total_reviews || 0,
+      pairs: p.pairs || [],
+      subscribers: p.subscribers || 0,
+      isVerified: p.is_verified || false,
+      isActive: p.is_active || false,
+      createdAt: p.created_at,
+      user: p.user,
+    }));
+
     // Get total count for pagination
     const { count } = await supabase
       .from('providers')
@@ -62,7 +101,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      data: data || [],
+      data: transformedData,
       pagination: {
         total: count || 0,
         limit,
