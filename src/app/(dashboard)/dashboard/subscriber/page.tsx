@@ -12,64 +12,47 @@ import {
   ArrowRight,
   Star,
   CheckCircle,
-  Zap,
   Shield,
   Award,
   Clock,
-  AlertCircle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useUser } from '@/hooks/use-mounted';
 
-// Demo subscriptions
-const DEMO_SUBSCRIPTIONS = [
-  {
-    id: '1',
-    providerName: 'FX Pro Uganda',
-    status: 'active',
-    plan: 'monthly',
-    endDate: new Date(Date.now() + 25 * 24 * 60 * 60 * 1000).toISOString(),
-    price: 100000,
-  },
-  {
-    id: '2',
-    providerName: 'Crypto Alpha Signals',
-    status: 'active',
-    plan: 'quarterly',
-    endDate: new Date(Date.now() + 85 * 24 * 60 * 60 * 1000).toISOString(),
-    price: 480000,
-  },
-];
+interface Subscription {
+  id: string;
+  providerId: string;
+  provider: {
+    displayName: string;
+  };
+  status: string;
+  plan: string;
+  endDate: string;
+  amount: number;
+}
 
-// Demo signals
-const DEMO_SIGNALS = [
-  {
-    id: '1',
-    providerName: 'FX Pro Uganda',
-    pair: 'EUR/USD',
-    direction: 'BUY',
-    entryPrice: 1.0850,
-    status: 'active',
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: '2',
-    providerName: 'Crypto Alpha Signals',
-    pair: 'BTC/USD',
-    direction: 'SELL',
-    entryPrice: 42500,
-    status: 'tp1_hit',
-    createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-  },
-];
+interface Signal {
+  id: string;
+  pair: string;
+  direction: 'BUY' | 'SELL';
+  entryPrice: number;
+  status: string;
+  provider: {
+    displayName: string;
+  };
+  createdAt: string;
+}
 
 export default function SubscriberDashboard() {
   const { user } = useUser();
   const router = useRouter();
   const [checkingApplication, setCheckingApplication] = useState(false);
   const [existingApplication, setExistingApplication] = useState<any>(null);
+  const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
+  const [signals, setSignals] = useState<Signal[]>([]);
+  const [loading, setLoading] = useState(true);
 
   // Check for existing provider application on mount
   useEffect(() => {
@@ -103,6 +86,39 @@ export default function SubscriberDashboard() {
     checkApplication();
   }, [user]);
 
+  // Fetch subscriptions and signals
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!user) return;
+      
+      try {
+        // Fetch subscriptions
+        const subResponse = await fetch('/api/subscriptions', {
+          headers: { 'Authorization': `Bearer ${user.id}` },
+        });
+        const subData = await subResponse.json();
+        if (subData.success) {
+          setSubscriptions(subData.data || []);
+        }
+
+        // Fetch signals
+        const signalsResponse = await fetch('/api/signals', {
+          headers: { 'Authorization': `Bearer ${user.id}` },
+        });
+        const signalsData = await signalsResponse.json();
+        if (signalsData.success) {
+          setSignals(signalsData.data || []);
+        }
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [user]);
+
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-UG', {
       style: 'currency',
@@ -121,13 +137,22 @@ export default function SubscriberDashboard() {
 
   const handleBecomeProvider = () => {
     if (existingApplication) {
-      // If already applied, go to status page
       router.push('/dashboard/application-status');
     } else {
-      // Otherwise, go to application form
       router.push('/dashboard/become-provider');
     }
   };
+
+  const activeSubscriptions = subscriptions.filter(s => s.status === 'active');
+  const monthlySpend = activeSubscriptions.reduce((sum, s) => sum + (s.amount || 0), 0);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -153,7 +178,7 @@ export default function SubscriberDashboard() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Active Subscriptions</p>
-                  <p className="text-3xl font-bold">{DEMO_SUBSCRIPTIONS.length}</p>
+                  <p className="text-3xl font-bold">{activeSubscriptions.length}</p>
                 </div>
                 <div className="w-12 h-12 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
                   <CreditCard className="w-6 h-6 text-blue-600 dark:text-blue-400" />
@@ -173,7 +198,7 @@ export default function SubscriberDashboard() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Signals Received</p>
-                  <p className="text-3xl font-bold">{DEMO_SIGNALS.length}</p>
+                  <p className="text-3xl font-bold">{signals.length}</p>
                 </div>
                 <div className="w-12 h-12 rounded-xl bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
                   <TrendingUp className="w-6 h-6 text-green-600 dark:text-green-400" />
@@ -193,9 +218,7 @@ export default function SubscriberDashboard() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Monthly Spend</p>
-                  <p className="text-3xl font-bold">
-                    {formatPrice(DEMO_SUBSCRIPTIONS.reduce((a, s) => a + s.price, 0))}
-                  </p>
+                  <p className="text-3xl font-bold">{formatPrice(monthlySpend)}</p>
                 </div>
                 <div className="w-12 h-12 rounded-xl bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
                   <Bell className="w-6 h-6 text-purple-600 dark:text-purple-400" />
@@ -267,7 +290,6 @@ export default function SubscriberDashboard() {
               )}
             </div>
             
-            {/* Trust indicators */}
             <div className="mt-6 pt-6 border-t border-dashed">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -309,27 +331,39 @@ export default function SubscriberDashboard() {
               </Link>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {DEMO_SUBSCRIPTIONS.map((sub) => (
-                  <div
-                    key={sub.id}
-                    className="flex items-center justify-between p-4 bg-muted/50 rounded-xl"
-                  >
-                    <div>
-                      <p className="font-medium">{sub.providerName}</p>
-                      <p className="text-sm text-muted-foreground">
-                        Expires {formatDate(sub.endDate)}
-                      </p>
+              {activeSubscriptions.length > 0 ? (
+                <div className="space-y-4">
+                  {activeSubscriptions.map((sub) => (
+                    <div
+                      key={sub.id}
+                      className="flex items-center justify-between p-4 bg-muted/50 rounded-xl"
+                    >
+                      <div>
+                        <p className="font-medium">{sub.provider?.displayName || 'Provider'}</p>
+                        <p className="text-sm text-muted-foreground">
+                          Expires {formatDate(sub.endDate)}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                          Active
+                        </Badge>
+                        <p className="text-sm mt-1 capitalize">{sub.plan}</p>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
-                        Active
-                      </Badge>
-                      <p className="text-sm mt-1">{sub.plan}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <CreditCard className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                  <p className="text-muted-foreground">No active subscriptions</p>
+                  <Link href="/providers">
+                    <Button className="mt-4" variant="outline">
+                      Browse Providers
+                    </Button>
+                  </Link>
+                </div>
+              )}
             </CardContent>
           </Card>
         </motion.div>
@@ -354,42 +388,50 @@ export default function SubscriberDashboard() {
               </Link>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {DEMO_SIGNALS.map((signal) => (
-                  <div
-                    key={signal.id}
-                    className="flex items-center justify-between p-4 bg-muted/50 rounded-xl"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div
-                        className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                          signal.direction === 'BUY' ? 'signal-buy' : 'signal-sell'
-                        }`}
-                      >
-                        <TrendingUp
-                          className={`w-5 h-5 ${signal.direction === 'SELL' ? 'rotate-180' : ''}`}
-                        />
+              {signals.length > 0 ? (
+                <div className="space-y-4">
+                  {signals.slice(0, 5).map((signal) => (
+                    <div
+                      key={signal.id}
+                      className="flex items-center justify-between p-4 bg-muted/50 rounded-xl"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                            signal.direction === 'BUY' ? 'signal-buy' : 'signal-sell'
+                          }`}
+                        >
+                          <TrendingUp
+                            className={`w-5 h-5 ${signal.direction === 'SELL' ? 'rotate-180' : ''}`}
+                          />
+                        </div>
+                        <div>
+                          <p className="font-medium">{signal.pair}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {signal.provider?.displayName || 'Provider'}
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-medium">{signal.pair}</p>
-                        <p className="text-sm text-muted-foreground">{signal.providerName}</p>
+                      <div className="text-right">
+                        <Badge variant={signal.status === 'active' ? 'secondary' : 'default'}>
+                          {signal.status}
+                        </Badge>
+                        <p className="text-xs mt-1 text-muted-foreground">
+                          {signal.direction} @ {signal.entryPrice}
+                        </p>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <Badge
-                        variant={
-                          signal.status === 'active' ? 'secondary' : 'default'
-                        }
-                      >
-                        {signal.status === 'active' ? 'Active' : 'TP1 Hit'}
-                      </Badge>
-                      <p className="text-xs mt-1 text-muted-foreground">
-                        {signal.direction} @ {signal.entryPrice}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <TrendingUp className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                  <p className="text-muted-foreground">No signals yet</p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Subscribe to a provider to receive signals
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </motion.div>

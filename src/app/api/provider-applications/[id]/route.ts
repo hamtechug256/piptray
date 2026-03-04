@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/database';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 // GET - Get single application
 export async function GET(
@@ -19,6 +19,10 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    if (!supabaseUrl || !supabaseServiceKey) {
+      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
+    }
+
     const supabase = createClient<Database>(supabaseUrl, supabaseServiceKey);
     
     // Get user to check role
@@ -32,7 +36,7 @@ export async function GET(
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    // Fetch application
+    // Fetch application with camelCase joins
     const { data: application, error } = await supabase
       .from('provider_applications')
       .select(`
@@ -76,6 +80,10 @@ export async function PATCH(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    if (!supabaseUrl || !supabaseServiceKey) {
+      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
+    }
+
     const body = await request.json();
     const { status, adminNotes, rejectionReason } = body;
 
@@ -103,7 +111,7 @@ export async function PATCH(
       return NextResponse.json({ error: 'Application not found' }, { status: 404 });
     }
 
-    // Update application status
+    // Update application status with camelCase
     const { error: updateError } = await supabase
       .from('provider_applications')
       .update({
@@ -136,7 +144,7 @@ export async function PATCH(
         console.error('Error updating user role:', userUpdateError);
       }
 
-      // Create provider profile
+      // Create provider profile with camelCase
       const { data: userData } = await supabase
         .from('users')
         .select('name, email, avatar')

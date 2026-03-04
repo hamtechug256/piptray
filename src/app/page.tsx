@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import {
@@ -35,54 +35,21 @@ import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { useMounted } from '@/hooks/use-mounted';
 
-// Demo providers for the landing page
-const demoProviders = [
-  {
-    id: '1',
-    displayName: 'FX Pro Uganda',
-    bio: 'Professional forex trader with 5+ years experience. Specializing in EUR/USD and XAU/USD.',
-    avatar: null,
-    tier: 'verified',
-    winRate: 72,
-    totalPips: 2450,
-    totalSignals: 156,
-    monthlyPrice: 100000,
-    averageRating: 4.5,
-    totalReviews: 38,
-    pairs: ['EUR/USD', 'XAU/USD', 'GBP/USD'],
-    subscribers: 45,
-  },
-  {
-    id: '2',
-    displayName: 'Crypto Alpha Signals',
-    bio: 'Cryptocurrency trading expert. Technical analysis and on-chain data combined.',
-    avatar: null,
-    tier: 'top',
-    winRate: 78,
-    totalPips: 3200,
-    totalSignals: 89,
-    monthlyPrice: 180000,
-    averageRating: 4.8,
-    totalReviews: 67,
-    pairs: ['BTC/USD', 'ETH/USD', 'SOL/USD'],
-    subscribers: 82,
-  },
-  {
-    id: '3',
-    displayName: 'Gold Rush Trading',
-    bio: 'XAU/USD specialist. Pure price action analysis with key levels.',
-    avatar: null,
-    tier: 'verified',
-    winRate: 68,
-    totalPips: 1890,
-    totalSignals: 234,
-    monthlyPrice: 85000,
-    averageRating: 4.3,
-    totalReviews: 29,
-    pairs: ['XAU/USD', 'XAG/USD'],
-    subscribers: 38,
-  },
-];
+interface Provider {
+  id: string;
+  displayName: string;
+  bio: string | null;
+  avatar: string | null;
+  tier: string;
+  winRate: number;
+  totalPips: number;
+  totalSignals: number;
+  monthlyPrice: number;
+  averageRating: number;
+  totalReviews: number;
+  pairs: string[];
+  subscribers: number;
+}
 
 const stats = [
   { value: '50+', label: 'Verified Providers' },
@@ -194,7 +161,28 @@ const faqs = [
 
 export default function LandingPage() {
   const [activeFaq, setActiveFaq] = useState<number | null>(null);
+  const [providers, setProviders] = useState<Provider[]>([]);
+  const [providersLoading, setProvidersLoading] = useState(true);
   const mounted = useMounted();
+
+  useEffect(() => {
+    const fetchProviders = async () => {
+      try {
+        const response = await fetch('/api/providers?featured=true&limit=3');
+        const data = await response.json();
+        
+        if (data.success && data.data?.length > 0) {
+          setProviders(data.data);
+        }
+      } catch (error) {
+        console.error('Error fetching providers:', error);
+      } finally {
+        setProvidersLoading(false);
+      }
+    };
+
+    fetchProviders();
+  }, []);
 
   // Handle hydration gracefully
   if (!mounted) {
@@ -419,19 +407,30 @@ export default function LandingPage() {
             </p>
           </motion.div>
 
-          <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-            {demoProviders.map((provider, i) => (
-              <motion.div
-                key={provider.id}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1 }}
-              >
-                <ProviderCard provider={provider} />
-              </motion.div>
-            ))}
-          </div>
+          {providersLoading ? (
+            <div className="flex justify-center py-12">
+              <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+            </div>
+          ) : providers.length > 0 ? (
+            <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+              {providers.map((provider, i) => (
+                <motion.div
+                  key={provider.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.1 }}
+                >
+                  <ProviderCard provider={provider} />
+                </motion.div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <Users className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+              <p className="text-muted-foreground">No providers available yet. Be the first to join!</p>
+            </div>
+          )}
 
           <div className="text-center mt-10">
             <Link href="/providers">
@@ -648,25 +647,7 @@ export default function LandingPage() {
 }
 
 // Provider Card Component
-function ProviderCard({
-  provider,
-}: {
-  provider: {
-    id: string;
-    displayName: string;
-    bio: string;
-    avatar: string | null;
-    tier: string;
-    winRate: number;
-    totalPips: number;
-    totalSignals: number;
-    monthlyPrice: number;
-    averageRating: number;
-    totalReviews: number;
-    pairs: string[];
-    subscribers: number;
-  };
-}) {
+function ProviderCard({ provider }: { provider: Provider }) {
   const tierColors: Record<string, string> = {
     new: 'badge-new',
     registered: 'badge-registered',
@@ -706,29 +687,33 @@ function ProviderCard({
               </Avatar>
               <div>
                 <h3 className="font-semibold">{provider.displayName}</h3>
-                <Badge className={tierColors[provider.tier]} variant="secondary">
-                  {tierIcons[provider.tier]}{' '}
-                  {provider.tier.charAt(0).toUpperCase() + provider.tier.slice(1)}
+                <Badge className={tierColors[provider.tier] || 'badge-new'} variant="secondary">
+                  {tierIcons[provider.tier] || '🔰'}{' '}
+                  {provider.tier?.charAt(0).toUpperCase() + provider.tier?.slice(1) || 'New'}
                 </Badge>
               </div>
             </div>
           </div>
 
-          <p className="text-sm text-muted-foreground line-clamp-2 mb-4">{provider.bio}</p>
+          <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
+            {provider.bio || 'Professional signal provider'}
+          </p>
 
           {/* Pairs */}
-          <div className="flex flex-wrap gap-1 mb-4">
-            {provider.pairs.slice(0, 3).map((pair) => (
-              <Badge key={pair} variant="outline" className="text-xs">
-                {pair}
-              </Badge>
-            ))}
-            {provider.pairs.length > 3 && (
-              <Badge variant="outline" className="text-xs">
-                +{provider.pairs.length - 3}
-              </Badge>
-            )}
-          </div>
+          {provider.pairs && provider.pairs.length > 0 && (
+            <div className="flex flex-wrap gap-1 mb-4">
+              {provider.pairs.slice(0, 3).map((pair) => (
+                <Badge key={pair} variant="outline" className="text-xs">
+                  {pair}
+                </Badge>
+              ))}
+              {provider.pairs.length > 3 && (
+                <Badge variant="outline" className="text-xs">
+                  +{provider.pairs.length - 3}
+                </Badge>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Stats */}
@@ -740,11 +725,11 @@ function ProviderCard({
             <div className="text-xs text-muted-foreground">Win Rate</div>
           </div>
           <div className="text-center">
-            <div className="text-lg font-bold">{provider.totalPips.toLocaleString()}</div>
+            <div className="text-lg font-bold">{provider.totalPips?.toLocaleString() || 0}</div>
             <div className="text-xs text-muted-foreground">Pips</div>
           </div>
           <div className="text-center">
-            <div className="text-lg font-bold">{provider.totalSignals}</div>
+            <div className="text-lg font-bold">{provider.totalSignals || 0}</div>
             <div className="text-xs text-muted-foreground">Signals</div>
           </div>
         </div>
@@ -753,13 +738,13 @@ function ProviderCard({
         <div className="p-4 border-t border-border">
           <div className="flex items-center justify-between mb-3">
             <div>
-              <span className="text-lg font-bold">{formatPrice(provider.monthlyPrice)}</span>
+              <span className="text-lg font-bold">{formatPrice(provider.monthlyPrice || 0)}</span>
               <span className="text-muted-foreground text-sm">/month</span>
             </div>
             <div className="flex items-center gap-1 text-yellow-500">
               <Star className="w-4 h-4 fill-current" />
-              <span className="font-medium">{provider.averageRating}</span>
-              <span className="text-muted-foreground text-sm">({provider.totalReviews})</span>
+              <span className="font-medium">{provider.averageRating || 0}</span>
+              <span className="text-muted-foreground text-sm">({provider.totalReviews || 0})</span>
             </div>
           </div>
           <Link href={`/provider/${provider.id}`}>

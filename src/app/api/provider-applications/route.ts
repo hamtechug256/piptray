@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/database';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 // GET - Fetch user's applications or all applications (admin)
 export async function GET(request: NextRequest) {
@@ -13,6 +13,10 @@ export async function GET(request: NextRequest) {
     
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    if (!supabaseUrl || !supabaseServiceKey) {
+      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
     }
 
     const supabase = createClient<Database>(supabaseUrl, supabaseServiceKey);
@@ -69,6 +73,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    if (!supabaseUrl || !supabaseServiceKey) {
+      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
+    }
+
     const body = await request.json();
     const {
       tradingExperience,
@@ -98,7 +106,7 @@ export async function POST(request: NextRequest) {
 
     const supabase = createClient<Database>(supabaseUrl, supabaseServiceKey);
 
-    // Check if user exists and is a subscriber
+    // Check if user exists
     const { data: user } = await supabase
       .from('users')
       .select('id, role')
@@ -124,7 +132,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create application
+    // Create application with camelCase column names
     const { data: application, error } = await supabase
       .from('provider_applications')
       .insert({

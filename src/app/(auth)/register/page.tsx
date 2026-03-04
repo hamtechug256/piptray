@@ -74,7 +74,6 @@ export default function RegisterPage() {
     }
 
     try {
-      // Try real API registration
       const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -89,7 +88,6 @@ export default function RegisterPage() {
       const data = await response.json();
 
       if (data.success) {
-        // Real registration successful
         if (data.data?.user) {
           localStorage.setItem('piptray_user', JSON.stringify(data.data.user));
         }
@@ -101,47 +99,18 @@ export default function RegisterPage() {
         // Redirect after short delay
         setTimeout(() => {
           if (accountType === 'provider') {
-            router.push('/dashboard/provider');
+            router.push('/dashboard/become-provider');
           } else {
             router.push('/dashboard/subscriber');
           }
         }, 1500);
       } else {
-        // Fall back to demo mode
-        console.log('Falling back to demo mode');
-        const userData = {
-          id: `demo_${Date.now()}`,
-          name: name,
-          email: email,
-          role: accountType,
-        };
-
-        localStorage.setItem('piptray_user', JSON.stringify(userData));
-        
-        if (accountType === 'provider') {
-          router.push('/dashboard/provider');
-        } else {
-          router.push('/dashboard/subscriber');
-        }
+        // Show actual error from API
+        setError(data.error || 'Registration failed. Please try again.');
       }
     } catch (err) {
       console.error('Registration error:', err);
-      
-      // Demo mode fallback
-      const userData = {
-        id: `demo_${Date.now()}`,
-        name: name,
-        email: email,
-        role: accountType,
-      };
-
-      localStorage.setItem('piptray_user', JSON.stringify(userData));
-      
-      if (accountType === 'provider') {
-        router.push('/dashboard/provider');
-      } else {
-        router.push('/dashboard/subscriber');
-      }
+      setError('An error occurred. Please check your connection and try again.');
     } finally {
       setLoading(false);
     }

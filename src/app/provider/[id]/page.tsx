@@ -19,6 +19,7 @@ import {
   BarChart3,
   Wallet,
   ChevronRight,
+  AlertCircle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -29,12 +30,27 @@ import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { useMounted, useUser } from '@/hooks/use-mounted';
 import { Separator } from '@/components/ui/separator';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
-// Demo provider data
-const DEMO_PROVIDERS: Record<string, {
+interface Signal {
+  id: string;
+  pair: string;
+  direction: 'BUY' | 'SELL';
+  entryPrice: number;
+  stopLoss: number;
+  takeProfit1: number;
+  takeProfit2: number | null;
+  takeProfit3: number | null;
+  status: string;
+  outcome: 'win' | 'loss' | 'pending';
+  pips: number;
+  createdAt: string;
+}
+
+interface Provider {
   id: string;
   displayName: string;
-  bio: string;
+  bio: string | null;
   avatar: string | null;
   tier: 'new' | 'registered' | 'verified' | 'top' | 'elite';
   winRate: number;
@@ -50,94 +66,8 @@ const DEMO_PROVIDERS: Record<string, {
   timeframes: string[];
   subscribers: number;
   isVerified: boolean;
-  signals: Array<{
-    id: string;
-    pair: string;
-    direction: 'BUY' | 'SELL';
-    entryPrice: number;
-    stopLoss: number;
-    takeProfit1: number;
-    takeProfit2: number | null;
-    takeProfit3: number | null;
-    status: string;
-    outcome: 'win' | 'loss' | 'pending';
-    pips: number;
-    createdAt: string;
-  }>;
-}> = {
-  '1': {
-    id: '1',
-    displayName: 'FX Pro Uganda',
-    bio: 'Professional forex trader with 5+ years experience. Specializing in EUR/USD and XAU/USD with a focus on technical analysis and price action. I believe in quality over quantity - every signal is carefully analyzed before posting.',
-    avatar: null,
-    tier: 'verified',
-    winRate: 72,
-    totalPips: 2450,
-    totalSignals: 156,
-    monthlyPrice: 100000,
-    weeklyPrice: 30000,
-    quarterlyPrice: 270000,
-    yearlyPrice: 900000,
-    averageRating: 4.5,
-    totalReviews: 38,
-    pairs: ['EUR/USD', 'XAU/USD', 'GBP/USD'],
-    timeframes: ['day', 'swing'],
-    subscribers: 45,
-    isVerified: true,
-    signals: [
-      { id: 's1', pair: 'EUR/USD', direction: 'BUY', entryPrice: 1.0850, stopLoss: 1.0820, takeProfit1: 1.0890, takeProfit2: 1.0920, takeProfit3: null, status: 'closed', outcome: 'win', pips: 70, createdAt: '2024-01-15' },
-      { id: 's2', pair: 'XAU/USD', direction: 'SELL', entryPrice: 2025.50, stopLoss: 2035.50, takeProfit1: 2010.00, takeProfit2: 1995.00, takeProfit3: null, status: 'closed', outcome: 'win', pips: 305, createdAt: '2024-01-14' },
-      { id: 's3', pair: 'GBP/USD', direction: 'BUY', entryPrice: 1.2650, stopLoss: 1.2620, takeProfit1: 1.2710, takeProfit2: null, takeProfit3: null, status: 'active', outcome: 'pending', pips: 0, createdAt: '2024-01-16' },
-    ],
-  },
-  '2': {
-    id: '2',
-    displayName: 'Crypto Alpha Signals',
-    bio: 'Cryptocurrency trading expert. Technical analysis and on-chain data combined for high-probability setups in the volatile crypto market. Focused on BTC, ETH, and top altcoins.',
-    avatar: null,
-    tier: 'top',
-    winRate: 78,
-    totalPips: 3200,
-    totalSignals: 89,
-    monthlyPrice: 180000,
-    weeklyPrice: 50000,
-    quarterlyPrice: 480000,
-    yearlyPrice: 1600000,
-    averageRating: 4.8,
-    totalReviews: 67,
-    pairs: ['BTC/USD', 'ETH/USD', 'SOL/USD'],
-    timeframes: ['swing', 'position'],
-    subscribers: 82,
-    isVerified: true,
-    signals: [
-      { id: 's1', pair: 'BTC/USD', direction: 'BUY', entryPrice: 42500, stopLoss: 41500, takeProfit1: 44500, takeProfit2: 46000, takeProfit3: null, status: 'closed', outcome: 'win', pips: 3500, createdAt: '2024-01-15' },
-      { id: 's2', pair: 'ETH/USD', direction: 'SELL', entryPrice: 2550, stopLoss: 2600, takeProfit1: 2400, takeProfit2: null, takeProfit3: null, status: 'active', outcome: 'pending', pips: 0, createdAt: '2024-01-16' },
-    ],
-  },
-  '3': {
-    id: '3',
-    displayName: 'Gold Rush Trading',
-    bio: 'XAU/USD specialist. Pure price action analysis with key levels. Over 200 signals with consistent performance. I trade what I see, not what I think.',
-    avatar: null,
-    tier: 'verified',
-    winRate: 68,
-    totalPips: 1890,
-    totalSignals: 234,
-    monthlyPrice: 85000,
-    weeklyPrice: 25000,
-    quarterlyPrice: 230000,
-    yearlyPrice: 800000,
-    averageRating: 4.3,
-    totalReviews: 29,
-    pairs: ['XAU/USD', 'XAG/USD'],
-    timeframes: ['scalp', 'day'],
-    subscribers: 38,
-    isVerified: true,
-    signals: [
-      { id: 's1', pair: 'XAU/USD', direction: 'BUY', entryPrice: 2020.00, stopLoss: 2015.00, takeProfit1: 2030.00, takeProfit2: 2040.00, takeProfit3: null, status: 'closed', outcome: 'win', pips: 200, createdAt: '2024-01-15' },
-    ],
-  },
-};
+  signals: Signal[];
+}
 
 const tierColors: Record<string, string> = {
   new: 'badge-new',
@@ -162,10 +92,78 @@ export default function ProviderProfilePage() {
   const { user } = useUser();
   const [selectedPlan, setSelectedPlan] = useState<'weekly' | 'monthly' | 'quarterly' | 'yearly'>('monthly');
   const [showSubscribeModal, setShowSubscribeModal] = useState(false);
+  const [provider, setProvider] = useState<Provider | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [subscribing, setSubscribing] = useState(false);
 
-  const provider = DEMO_PROVIDERS[params.id as string];
+  // Fetch provider data from API
+  useEffect(() => {
+    const fetchProvider = async () => {
+      try {
+        const response = await fetch(`/api/providers/${params.id}`);
+        const data = await response.json();
+        
+        if (data.success && data.data) {
+          setProvider(data.data);
+        } else {
+          setError('Provider not found');
+        }
+      } catch (err) {
+        console.error('Error fetching provider:', err);
+        setError('Failed to load provider');
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  if (!mounted) {
+    if (params.id) {
+      fetchProvider();
+    }
+  }, [params.id]);
+
+  const handleSubscribe = async () => {
+    if (!user) {
+      router.push('/login');
+      return;
+    }
+    
+    if (!provider) return;
+    
+    setSubscribing(true);
+    try {
+      const response = await fetch('/api/subscriptions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          providerId: provider.id,
+          plan: selectedPlan,
+          amount: getPlanPrice(),
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        if (data.paymentUrl) {
+          // Redirect to payment
+          window.location.href = data.paymentUrl;
+        } else {
+          // Free or direct subscription
+          router.push('/dashboard/subscriber?subscribed=true');
+        }
+      } else {
+        setError(data.error || 'Failed to create subscription');
+      }
+    } catch (err) {
+      console.error('Subscription error:', err);
+      setError('Failed to process subscription');
+    } finally {
+      setSubscribing(false);
+    }
+  };
+
+  if (!mounted || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
@@ -173,12 +171,12 @@ export default function ProviderProfilePage() {
     );
   }
 
-  if (!provider) {
+  if (error || !provider) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
           <h1 className="text-2xl font-bold mb-4">Provider Not Found</h1>
-          <p className="text-muted-foreground mb-6">This provider does not exist or has been removed.</p>
+          <p className="text-muted-foreground mb-6">{error || 'This provider does not exist or has been removed.'}</p>
           <Link href="/providers">
             <Button>Browse Providers</Button>
           </Link>
@@ -208,14 +206,6 @@ export default function ProviderProfilePage() {
       default:
         return provider.monthlyPrice;
     }
-  };
-
-  const handleSubscribe = () => {
-    if (!user) {
-      router.push('/login');
-      return;
-    }
-    setShowSubscribeModal(true);
   };
 
   return (
@@ -263,7 +253,7 @@ export default function ProviderProfilePage() {
                   </div>
                 </div>
 
-                <p className="text-muted-foreground mb-6">{provider.bio}</p>
+                <p className="text-muted-foreground mb-6">{provider.bio || 'No bio provided.'}</p>
 
                 {/* Quick Stats */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -307,50 +297,57 @@ export default function ProviderProfilePage() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-4">
-                      {provider.signals.map((signal) => (
-                        <div
-                          key={signal.id}
-                          className="flex items-center justify-between p-4 bg-muted/50 rounded-xl"
-                        >
-                          <div className="flex items-center gap-4">
-                            <div
-                              className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                                signal.direction === 'BUY'
-                                  ? 'signal-buy'
-                                  : 'signal-sell'
-                              }`}
-                            >
-                              {signal.direction === 'BUY' ? (
-                                <TrendingUp className="w-5 h-5" />
-                              ) : (
-                                <TrendingUp className="w-5 h-5 rotate-180" />
+                    {provider.signals && provider.signals.length > 0 ? (
+                      <div className="space-y-4">
+                        {provider.signals.map((signal) => (
+                          <div
+                            key={signal.id}
+                            className="flex items-center justify-between p-4 bg-muted/50 rounded-xl"
+                          >
+                            <div className="flex items-center gap-4">
+                              <div
+                                className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+                                  signal.direction === 'BUY'
+                                    ? 'signal-buy'
+                                    : 'signal-sell'
+                                }`}
+                              >
+                                {signal.direction === 'BUY' ? (
+                                  <TrendingUp className="w-5 h-5" />
+                                ) : (
+                                  <TrendingUp className="w-5 h-5 rotate-180" />
+                                )}
+                              </div>
+                              <div>
+                                <div className="font-semibold">{signal.pair}</div>
+                                <div className="text-sm text-muted-foreground">
+                                  Entry: {signal.entryPrice} | SL: {signal.stopLoss} | TP: {signal.takeProfit1}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <Badge
+                                variant={signal.outcome === 'win' ? 'default' : signal.outcome === 'loss' ? 'destructive' : 'secondary'}
+                              >
+                                {signal.status === 'active' ? 'Active' : signal.outcome.toUpperCase()}
+                              </Badge>
+                              {signal.outcome !== 'pending' && (
+                                <div className="text-sm mt-1">
+                                  <span className={signal.outcome === 'win' ? 'text-green-600' : 'text-red-600'}>
+                                    {signal.pips} pips
+                                  </span>
+                                </div>
                               )}
                             </div>
-                            <div>
-                              <div className="font-semibold">{signal.pair}</div>
-                              <div className="text-sm text-muted-foreground">
-                                Entry: {signal.entryPrice} | SL: {signal.stopLoss} | TP: {signal.takeProfit1}
-                              </div>
-                            </div>
                           </div>
-                          <div className="text-right">
-                            <Badge
-                              variant={signal.outcome === 'win' ? 'default' : signal.outcome === 'loss' ? 'destructive' : 'secondary'}
-                            >
-                              {signal.status === 'active' ? 'Active' : signal.outcome.toUpperCase()}
-                            </Badge>
-                            {signal.outcome !== 'pending' && (
-                              <div className="text-sm mt-1">
-                                <span className={signal.outcome === 'win' ? 'text-green-600' : 'text-red-600'}>
-                                  {signal.pips} pips
-                                </span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <Target className="w-12 h-12 mx-auto mb-4" />
+                        <p>No signals yet. Check back soon!</p>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -386,22 +383,30 @@ export default function ProviderProfilePage() {
                     <div>
                       <h4 className="font-semibold mb-2">Trading Pairs</h4>
                       <div className="flex flex-wrap gap-2">
-                        {provider.pairs.map((pair) => (
-                          <Badge key={pair} variant="outline">
-                            {pair}
-                          </Badge>
-                        ))}
+                        {provider.pairs && provider.pairs.length > 0 ? (
+                          provider.pairs.map((pair) => (
+                            <Badge key={pair} variant="outline">
+                              {pair}
+                            </Badge>
+                          ))
+                        ) : (
+                          <span className="text-muted-foreground text-sm">No pairs specified</span>
+                        )}
                       </div>
                     </div>
                     <Separator />
                     <div>
                       <h4 className="font-semibold mb-2">Timeframes</h4>
                       <div className="flex flex-wrap gap-2">
-                        {provider.timeframes.map((tf) => (
-                          <Badge key={tf} variant="secondary">
-                            {tf.charAt(0).toUpperCase() + tf.slice(1)}
-                          </Badge>
-                        ))}
+                        {provider.timeframes && provider.timeframes.length > 0 ? (
+                          provider.timeframes.map((tf) => (
+                            <Badge key={tf} variant="secondary">
+                              {tf.charAt(0).toUpperCase() + tf.slice(1)}
+                            </Badge>
+                          ))
+                        ) : (
+                          <span className="text-muted-foreground text-sm">No timeframes specified</span>
+                        )}
                       </div>
                     </div>
                   </CardContent>
@@ -450,9 +455,18 @@ export default function ProviderProfilePage() {
                 </div>
 
                 {/* Subscribe Button */}
-                <Button className="w-full btn-primary h-12" onClick={handleSubscribe}>
-                  <Bell className="w-4 h-4 mr-2" />
-                  Subscribe Now
+                <Button className="w-full btn-primary h-12" onClick={handleSubscribe} disabled={subscribing}>
+                  {subscribing ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      <Bell className="w-4 h-4 mr-2" />
+                      Subscribe Now
+                    </>
+                  )}
                 </Button>
 
                 {/* Features */}
@@ -519,6 +533,12 @@ export default function ProviderProfilePage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              {error && (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
               <div className="bg-muted/50 rounded-xl p-4">
                 <div className="flex justify-between mb-2">
                   <span>Plan</span>
@@ -541,17 +561,16 @@ export default function ProviderProfilePage() {
                   variant="outline"
                   className="flex-1"
                   onClick={() => setShowSubscribeModal(false)}
+                  disabled={subscribing}
                 >
                   Cancel
                 </Button>
                 <Button
                   className="flex-1 btn-primary"
-                  onClick={() => {
-                    alert('Demo mode: Subscription confirmed!');
-                    setShowSubscribeModal(false);
-                  }}
+                  onClick={handleSubscribe}
+                  disabled={subscribing}
                 >
-                  Confirm
+                  {subscribing ? 'Processing...' : 'Confirm'}
                 </Button>
               </div>
             </CardContent>
