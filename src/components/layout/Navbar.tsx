@@ -10,7 +10,6 @@ import {
   X,
   Sun,
   Moon,
-  Bell,
   LogOut,
   Settings,
   LayoutDashboard,
@@ -28,6 +27,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { useMounted, useUser } from '@/hooks/use-mounted';
+import { NotificationBell } from '@/components/layout/NotificationBell';
 
 export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -113,10 +113,7 @@ export function Navbar() {
             {user ? (
               <div className="flex items-center gap-3">
                 {/* Notifications */}
-                <Button variant="ghost" size="icon" className="relative">
-                  <Bell className="h-5 w-5" />
-                  <span className="notification-badge">3</span>
-                </Button>
+                <NotificationBell userId={user.id} />
 
                 {/* User Menu */}
                 <DropdownMenu>
