@@ -37,13 +37,12 @@ export async function GET(request: NextRequest) {
       .from('provider_applications')
       .select(`
         *,
-        user:users!provider_applications_userId_fkey(id, email, name, avatar),
-        reviewer:users!provider_applications_reviewedBy_fkey(id, email, name)
+        user:users(id, email, name, avatar)
       `)
-      .order('createdAt', { ascending: false });
+      .order('created_at', { ascending: false });
 
     if (user.role !== 'admin') {
-      query = query.eq('userId', userId);
+      query = query.eq('user_id', userId);
     }
 
     const { data: applications, error } = await query;
@@ -53,7 +52,33 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ success: true, data: applications });
+    // Transform snake_case to camelCase for frontend
+    const transformedApplications = (applications || []).map(app => ({
+      id: app.id,
+      userId: app.user_id,
+      status: app.status,
+      tradingExperience: app.trading_experience,
+      experienceLevel: app.experience_level,
+      tradingStyle: app.trading_style,
+      marketsTraded: app.markets_traded,
+      averageMonthlySignals: app.average_monthly_signals,
+      estimatedWinRate: app.estimated_win_rate,
+      trackRecordDescription: app.track_record_description,
+      telegramChannel: app.telegram_channel,
+      twitterHandle: app.twitter_handle,
+      tradingViewProfile: app.trading_view_profile,
+      otherSocialLinks: app.other_social_links,
+      motivationStatement: app.motivation_statement,
+      identityDocumentUrl: app.identity_document_url,
+      tradingStatementUrl: app.trading_statement_url,
+      adminNotes: app.admin_notes,
+      rejectionReason: app.rejection_reason,
+      createdAt: app.created_at,
+      updatedAt: app.updated_at,
+      user: app.user,
+    }));
+
+    return NextResponse.json({ success: true, data: transformedApplications });
   } catch (error) {
     console.error('Server error:', error);
     return NextResponse.json(
@@ -121,9 +146,9 @@ export async function POST(request: NextRequest) {
     const { data: existingApp } = await supabase
       .from('provider_applications')
       .select('id, status')
-      .eq('userId', userId)
+      .eq('user_id', userId)
       .in('status', ['pending', 'under_review'])
-      .single();
+      .maybeSingle();
 
     if (existingApp) {
       return NextResponse.json(
@@ -132,28 +157,28 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create application with camelCase column names
+    // Create application with snake_case column names
     const { data: application, error } = await supabase
       .from('provider_applications')
       .insert({
-        userId,
+        user_id: userId,
         status: 'pending',
-        tradingExperience: parseInt(tradingExperience),
-        experienceLevel,
-        tradingStyle,
-        marketsTraded,
-        averageMonthlySignals: averageMonthlySignals || 10,
-        estimatedWinRate: estimatedWinRate ? parseFloat(estimatedWinRate) : null,
-        trackRecordDescription: trackRecordDescription || null,
-        telegramChannel: telegramChannel || null,
-        twitterHandle: twitterHandle || null,
-        tradingViewProfile: tradingViewProfile || null,
-        otherSocialLinks: otherSocialLinks || null,
-        motivationStatement,
-        identityDocumentUrl: identityDocumentUrl || null,
-        tradingStatementUrl: tradingStatementUrl || null,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+        trading_experience: parseInt(tradingExperience),
+        experience_level: experienceLevel,
+        trading_style: tradingStyle,
+        markets_traded: marketsTraded,
+        average_monthly_signals: averageMonthlySignals || 10,
+        estimated_win_rate: estimatedWinRate ? parseFloat(estimatedWinRate) : null,
+        track_record_description: trackRecordDescription || null,
+        telegram_channel: telegramChannel || null,
+        twitter_handle: twitterHandle || null,
+        trading_view_profile: tradingViewProfile || null,
+        other_social_links: otherSocialLinks || null,
+        motivation_statement: motivationStatement,
+        identity_document_url: identityDocumentUrl || null,
+        trading_statement_url: tradingStatementUrl || null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       })
       .select()
       .single();
