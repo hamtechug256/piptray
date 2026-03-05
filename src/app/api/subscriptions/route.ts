@@ -24,10 +24,10 @@ export async function GET(request: NextRequest) {
         *,
         provider:providers(
           id,
-          display_name,
+          "displayName",
           tier,
           avatar,
-          win_rate,
+          "winRate",
           user:users(id, name, avatar)
         )
       `)
@@ -85,14 +85,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get provider
+    // Get provider with ACTUAL column names
     const { data: provider, error: providerError } = await supabase
       .from('providers')
-      .select('*')
+      .select('id, "displayName", currency, subscribers, "monthlyPrice", weeklyprice, quarterlyprice, yearlyprice, weekly_price, quarterly_price, yearly_price')
       .eq('id', provider_id)
       .single();
 
     if (providerError || !provider) {
+      console.error('Provider error:', providerError);
       return NextResponse.json(
         { success: false, error: 'Provider not found' },
         { status: 404 }
@@ -106,7 +107,7 @@ export async function POST(request: NextRequest) {
       .eq('user_id', authUser.id)
       .eq('provider_id', provider_id)
       .eq('status', 'active')
-      .single();
+      .maybeSingle();
 
     if (existingSub) {
       return NextResponse.json(
@@ -116,11 +117,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Calculate amount and duration based on plan
+    // Try both naming conventions since DB has duplicates
     const planPrices: Record<string, { price: number; days: number }> = {
-      weekly: { price: provider.weekly_price || 0, days: 7 },
-      monthly: { price: provider.monthly_price || 0, days: 30 },
-      quarterly: { price: provider.quarterly_price || 0, days: 90 },
-      yearly: { price: provider.yearly_price || 0, days: 365 },
+      weekly: { price: provider.weekly_price || provider.weeklyprice || 0, days: 7 },
+      monthly: { price: provider.monthlyPrice || provider.monthly_price || 0, days: 30 },
+      quarterly: { price: provider.quarterly_price || provider.quarterlyprice || 0, days: 90 },
+      yearly: { price: provider.yearly_price || provider.yearlyprice || 0, days: 365 },
     };
 
     const selectedPlan = planPrices[plan];
@@ -152,7 +154,7 @@ export async function POST(request: NextRequest) {
         end_date: endDate.toISOString(),
         payment_method,
         payment_status: 'pending',
-        status: 'active', // In production, you'd set this to pending until payment confirmed
+        status: 'active',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       })

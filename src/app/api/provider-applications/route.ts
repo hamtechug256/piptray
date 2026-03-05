@@ -52,33 +52,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    // Transform snake_case to camelCase for frontend
-    const transformedApplications = (applications || []).map(app => ({
-      id: app.id,
-      userId: app.user_id,
-      status: app.status,
-      tradingExperience: app.trading_experience,
-      experienceLevel: app.experience_level,
-      tradingStyle: app.trading_style,
-      marketsTraded: app.markets_traded,
-      averageMonthlySignals: app.average_monthly_signals,
-      estimatedWinRate: app.estimated_win_rate,
-      trackRecordDescription: app.track_record_description,
-      telegramChannel: app.telegram_channel,
-      twitterHandle: app.twitter_handle,
-      tradingViewProfile: app.trading_view_profile,
-      otherSocialLinks: app.other_social_links,
-      motivationStatement: app.motivation_statement,
-      identityDocumentUrl: app.identity_document_url,
-      tradingStatementUrl: app.trading_statement_url,
-      adminNotes: app.admin_notes,
-      rejectionReason: app.rejection_reason,
-      createdAt: app.created_at,
-      updatedAt: app.updated_at,
-      user: app.user,
-    }));
-
-    return NextResponse.json({ success: true, data: transformedApplications });
+    // Return data as-is (snake_case columns from DB)
+    return NextResponse.json({ success: true, data: applications || [] });
   } catch (error) {
     console.error('Server error:', error);
     return NextResponse.json(
@@ -157,7 +132,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create application with snake_case column names
+    // Create application with snake_case column names (PostgreSQL convention)
     const { data: application, error } = await supabase
       .from('provider_applications')
       .insert({
