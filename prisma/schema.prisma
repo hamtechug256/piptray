@@ -6,10 +6,14 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
+// ============================================
+// USER MODEL
+// ============================================
 model User {
   id              String   @id @default(cuid())
   email           String   @unique
@@ -30,16 +34,21 @@ model User {
   payments        Payment[]
   notifications   Notification[]
   reviews         Review[]
+
+  @@map("users")
 }
 
+// ============================================
+// PROVIDER MODEL
+// ============================================
 model Provider {
   id                 String   @id @default(cuid())
   userId             String   @unique
   displayName        String
   bio                String?
   avatar             String?
-  pairs              String   @default("")
-  timeframes         String   @default("")
+  pairs              String   @default("") // JSON array of trading pairs
+  timeframes         String   @default("") // JSON array of timeframes
   currency           String   @default("UGX")
   monthlyPrice       Float    @default(0)
   weeklyPrice        Float    @default(0)
@@ -56,10 +65,13 @@ model Provider {
   tier               String   @default("new") // new, registered, verified, top, elite
   averageRating      Float    @default(0)
   totalReviews       Int      @default(0)
+  
+  // Payment wallets
   binanceWallet      String?
   ethereumWallet     String?
   mtnMomoNumber      String?
   airtelMoneyNumber  String?
+  
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
@@ -68,8 +80,13 @@ model Provider {
   subscriptions     Subscription[]
   payments          Payment[]
   reviews           Review[]
+
+  @@map("providers")
 }
 
+// ============================================
+// SIGNAL MODEL
+// ============================================
 model Signal {
   id             String    @id @default(cuid())
   providerId     String
@@ -97,8 +114,13 @@ model Signal {
   updatedAt      DateTime  @updatedAt
 
   provider       Provider  @relation(fields: [providerId], references: [id], onDelete: Cascade)
+
+  @@map("signals")
 }
 
+// ============================================
+// SUBSCRIPTION MODEL
+// ============================================
 model Subscription {
   id            String    @id @default(cuid())
   userId        String
@@ -118,8 +140,13 @@ model Subscription {
 
   user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   provider      Provider  @relation(fields: [providerId], references: [id], onDelete: Cascade)
+
+  @@map("subscriptions")
 }
 
+// ============================================
+// PAYMENT MODEL
+// ============================================
 model Payment {
   id              String    @id @default(cuid())
   userId          String
@@ -143,8 +170,13 @@ model Payment {
 
   user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   provider        Provider? @relation(fields: [providerId], references: [id])
+
+  @@map("payments")
 }
 
+// ============================================
+// NOTIFICATION MODEL
+// ============================================
 model Notification {
   id        String    @id @default(cuid())
   userId    String
@@ -157,8 +189,13 @@ model Notification {
   createdAt DateTime  @default(now())
 
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
 }
 
+// ============================================
+// PROVIDER APPLICATION MODEL
+// ============================================
 model ProviderApplication {
   id                      String    @id @default(cuid())
   userId                  String
@@ -185,27 +222,36 @@ model ProviderApplication {
   updatedAt               DateTime  @updatedAt
 
   user                    User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("provider_applications")
 }
 
+// ============================================
+// REVIEW MODEL
+// ============================================
 model Review {
-  id          String   @id @default(cuid())
-  providerId  String
-  userId      String
-  rating      Int      // 1-5 stars
-  title       String?
-  comment     String?
-  isVerified  Boolean  @default(false) // Verified purchase
-  isPublic    Boolean  @default(true)
-  helpfulCount Int     @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id           String   @id @default(cuid())
+  providerId   String
+  userId       String
+  rating       Int      // 1-5 stars
+  title        String?
+  comment      String?
+  isVerified   Boolean  @default(false) // Verified purchase
+  isPublic     Boolean  @default(true)
+  helpfulCount Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   provider    Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([providerId, userId]) // One review per user per provider
+  @@map("reviews")
 }
 
+// ============================================
+// PLATFORM SETTINGS MODEL
+// ============================================
 model PlatformSettings {
   id                    String   @id @default(cuid())
   platformName          String   @default("PipTray")
@@ -222,4 +268,6 @@ model PlatformSettings {
   emailNotifications    Boolean  @default(true)
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
+
+  @@map("platform_settings")
 }
