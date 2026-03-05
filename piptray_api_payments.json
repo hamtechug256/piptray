@@ -1,0 +1,19 @@
+{
+  "code": 200,
+  "data": {
+    "description": "",
+    "html": "<html><head><meta name=\"color-scheme\" content=\"light dark\"></head><body><pre style=\"word-wrap: break-word; white-space: pre-wrap;\">[\n  {\n    \"name\": \"flutterwave\",\n    \"path\": \"src/app/api/payments/flutterwave\",\n    \"sha\": \"48aa5a16835f2498c2fb9906019e8cb71bdc6529\",\n    \"size\": 0,\n    \"url\": \"https://api.github.com/repos/hamtechug256/piptray/contents/src/app/api/payments/flutterwave?ref=main\",\n    \"html_url\": \"https://github.com/hamtechug256/piptray/tree/main/src/app/api/payments/flutterwave\",\n    \"git_url\": \"https://api.github.com/repos/hamtechug256/piptray/git/trees/48aa5a16835f2498c2fb9906019e8cb71bdc6529\",\n    \"download_url\": null,\n    \"type\": \"dir\",\n    \"_links\": {\n      \"self\": \"https://api.github.com/repos/hamtechug256/piptray/contents/src/app/api/payments/flutterwave?ref=main\",\n      \"git\": \"https://api.github.com/repos/hamtechug256/piptray/git/trees/48aa5a16835f2498c2fb9906019e8cb71bdc6529\",\n      \"html\": \"https://github.com/hamtechug256/piptray/tree/main/src/app/api/payments/flutterwave\"\n    }\n  },\n  {\n    \"name\": \"route.ts\",\n    \"path\": \"src/app/api/payments/route.ts\",\n    \"sha\": \"9f48311585d237b366e684c7cfec1f5ffd0543db\",\n    \"size\": 4454,\n    \"url\": \"https://api.github.com/repos/hamtechug256/piptray/contents/src/app/api/payments/route.ts?ref=main\",\n    \"html_url\": \"https://github.com/hamtechug256/piptray/blob/main/src/app/api/payments/route.ts\",\n    \"git_url\": \"https://api.github.com/repos/hamtechug256/piptray/git/blobs/9f48311585d237b366e684c7cfec1f5ffd0543db\",\n    \"download_url\": \"https://raw.githubusercontent.com/hamtechug256/piptray/main/src/app/api/payments/route.ts\",\n    \"type\": \"file\",\n    \"_links\": {\n      \"self\": \"https://api.github.com/repos/hamtechug256/piptray/contents/src/app/api/payments/route.ts?ref=main\",\n      \"git\": \"https://api.github.com/repos/hamtechug256/piptray/git/blobs/9f48311585d237b366e684c7cfec1f5ffd0543db\",\n      \"html\": \"https://github.com/hamtechug256/piptray/blob/main/src/app/api/payments/route.ts\"\n    }\n  }\n]\n</pre></body></html>",
+    "publishedTime": "Wed, 04 Mar 2026 11:34:31 GMT",
+    "title": "",
+    "url": "https://api.github.com/repos/hamtechug256/piptray/contents/src/app/api/payments",
+    "usage": {
+      "tokens": 678
+    }
+  },
+  "meta": {
+    "usage": {
+      "tokens": 678
+    }
+  },
+  "status": 20000
+}

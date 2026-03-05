@@ -1,0 +1,18 @@
+{
+  "code": 200,
+  "data": {
+    "description": "",
+    "html": "<html><head><meta name=\"color-scheme\" content=\"light dark\"></head><body><pre style=\"word-wrap: break-word; white-space: pre-wrap;\">import { createClient } from '@supabase/supabase-js';\nimport type { Database } from '@/types/database';\n\nconst supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;\nconst supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;\n\nif (!supabaseUrl || !supabaseAnonKey) {\n  console.warn('Missing Supabase environment variables. Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY');\n}\n\n// Create client\nexport const supabase = createClient<Database>(\n  supabaseUrl || 'https://placeholder.supabase.co',\n  supabaseAnonKey || 'placeholder-key',\n  {\n    auth: {\n      autoRefreshToken: true,\n      persistSession: true,\n      detectSessionInUrl: true,\n      storage: typeof window !== 'undefined' ? window.localStorage : undefined,\n      flowType: 'implicit',\n    },\n  }\n);\n\n// Auth helper functions\nexport async function signUp(email: string, password: string, name: string, role: 'subscriber' | 'provider' = 'subscriber') {\n  const { data, error } = await supabase.auth.signUp({\n    email,\n    password,\n    options: {\n      data: {\n        name,\n        role,\n      },\n    },\n  });\n\n  if (error) throw error;\n  return data;\n}\n\nexport async function signIn(email: string, password: string) {\n  const { data, error } = await supabase.auth.signInWithPassword({\n    email,\n    password,\n  });\n\n  if (error) throw error;\n  return data;\n}\n\nexport async function signOut() {\n  const { error } = await supabase.auth.signOut();\n  if (error) throw error;\n}\n\nexport async function getCurrentUser() {\n  const { data: { user } } = await supabase.auth.getUser();\n  return user;\n}\n\nexport async function getSession() {\n  const { data: { session } } = await supabase.auth.getSession();\n  return session;\n}\n</pre></body></html>",
+    "title": "",
+    "url": "https://raw.githubusercontent.com/hamtechug256/piptray/main/src/lib/supabase/client.ts",
+    "usage": {
+      "tokens": 474
+    }
+  },
+  "meta": {
+    "usage": {
+      "tokens": 474
+    }
+  },
+  "status": 20000
+}
