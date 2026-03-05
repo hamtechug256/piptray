@@ -36,7 +36,7 @@ export async function GET(
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    // Fetch application with snake_case column names
+    // Fetch application
     const { data: application, error } = await supabase
       .from('provider_applications')
       .select(`
@@ -111,7 +111,7 @@ export async function PATCH(
       return NextResponse.json({ error: 'Application not found' }, { status: 404 });
     }
 
-    // Update application status with SNAKE_CASE column names
+    // Update application status with correct column names
     const { error: updateError } = await supabase
       .from('provider_applications')
       .update({
@@ -151,39 +151,38 @@ export async function PATCH(
         .eq('id', application.user_id)
         .single();
 
-      // Create provider profile with SNAKE_CASE column names
+      // Create provider profile with ACTUAL database column names (camelCase)
       const { error: providerError } = await supabase
         .from('providers')
         .insert({
-          user_id: application.user_id,
-          display_name: userData?.name || userData?.email?.split('@')[0] || 'New Provider',
-          avatar: userData?.avatar || null,
-          bio: null,
-          pairs: [],
-          timeframes: [],
-          currency: 'UGX',
-          monthly_price: 0,
-          weekly_price: 0,
-          quarterly_price: 0,
-          yearly_price: 0,
-          subscribers: 0,
-          is_verified: false,
-          verified_at: null,
-          is_active: true,  // ACTIVE BY DEFAULT WHEN APPROVED
-          total_signals: 0,
-          win_rate: 0,
-          total_pips: 0,
-          avg_rr: 0,
-          tier: 'new',
-          average_rating: 0,
-          total_reviews: 0,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
+          "userId": application.user_id,
+          "displayName": userData?.name || userData?.email?.split('@')[0] || 'New Provider',
+          "avatar": userData?.avatar || null,
+          "bio": null,
+          "pairs": [],
+          "timeframes": [],
+          "currency": 'UGX',
+          "monthlyPrice": 0,
+          "weeklyprice": 0,
+          "quarterlyprice": 0,
+          "yearlyprice": 0,
+          "subscribers": 0,
+          "isVerified": false,
+          "verifiedAt": null,
+          "isActive": true,  // ACTIVE BY DEFAULT WHEN APPROVED
+          "totalSignals": 0,
+          "winRate": 0,
+          "totalPips": 0,
+          "avgRR": 0,
+          "tier": 'new',
+          "average_rating": 0,
+          "total_reviews": 0,
+          "createdAt": new Date().toISOString(),
+          "updatedAt": new Date().toISOString(),
         });
 
       if (providerError) {
         console.error('Error creating provider profile:', providerError);
-        // Try to provide more details
         return NextResponse.json({ 
           error: 'Failed to create provider profile: ' + providerError.message 
         }, { status: 500 });
