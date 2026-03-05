@@ -28,7 +28,7 @@ export async function PATCH(
     // Verify the notification belongs to the user
     const { data: notification, error: fetchError } = await supabase
       .from('notifications')
-      .select('userId')
+      .select('user_id')
       .eq('id', id)
       .single();
 
@@ -36,13 +36,13 @@ export async function PATCH(
       return NextResponse.json({ error: 'Notification not found' }, { status: 404 });
     }
 
-    if (notification.userId !== userId) {
+    if (notification.user_id !== userId) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     const { error } = await supabase
       .from('notifications')
-      .update({ isRead: true, updatedAt: new Date().toISOString() })
+      .update({ is_read: true, updated_at: new Date().toISOString() })
       .eq('id', id);
 
     if (error) {

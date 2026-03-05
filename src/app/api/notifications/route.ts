@@ -24,8 +24,8 @@ export async function GET(request: NextRequest) {
     const { data: notifications, error } = await supabase
       .from('notifications')
       .select('*')
-      .eq('userId', userId)
-      .order('createdAt', { ascending: false })
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
       .limit(50);
 
     if (error) {
@@ -37,7 +37,20 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ success: true, data: notifications || [] });
+    // Transform to camelCase for frontend
+    const transformed = (notifications || []).map(n => ({
+      id: n.id,
+      userId: n.user_id,
+      type: n.type,
+      title: n.title,
+      message: n.message,
+      data: n.data,
+      isRead: n.is_read,
+      readAt: n.read_at,
+      createdAt: n.created_at,
+    }));
+
+    return NextResponse.json({ success: true, data: transformed });
   } catch (error) {
     console.error('Server error:', error);
     return NextResponse.json(
@@ -73,12 +86,12 @@ export async function POST(request: NextRequest) {
     const { data: notification, error } = await supabase
       .from('notifications')
       .insert({
-        userId: targetUserId,
+        user_id: targetUserId,
         type,
         title,
         message,
-        isRead: false,
-        createdAt: new Date().toISOString(),
+        is_read: false,
+        created_at: new Date().toISOString(),
       })
       .select()
       .single();
@@ -116,9 +129,9 @@ export async function PATCH(request: NextRequest) {
 
     const { error } = await supabase
       .from('notifications')
-      .update({ isRead: true })
-      .eq('userId', userId)
-      .eq('isRead', false);
+      .update({ is_read: true })
+      .eq('user_id', userId)
+      .eq('is_read', false);
 
     if (error) {
       console.error('Error marking all as read:', error);
