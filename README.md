@@ -1,141 +1,195 @@
-# 🚀 Welcome to Z.ai Code Scaffold
+# 🚀 PipTray
 
-A modern, production-ready web application scaffold powered by cutting-edge technologies, designed to accelerate your development with [Z.ai](https://chat.z.ai)'s AI-powered coding assistance.
+**Precision Trading. Proven Results.**
 
-## ✨ Technology Stack
+The trusted signal marketplace for East African traders. Connect with verified signal providers, see real performance stats, and trade with confidence.
 
-This scaffold provides a robust foundation built with:
+![PipTray Dashboard](https://piptray.com/og-image.png)
 
-### 🎯 Core Framework
-- **⚡ Next.js 16** - The React framework for production with App Router
-- **📘 TypeScript 5** - Type-safe JavaScript for better developer experience
-- **🎨 Tailwind CSS 4** - Utility-first CSS framework for rapid UI development
+## ✨ Features
 
-### 🧩 UI Components & Styling
-- **🧩 shadcn/ui** - High-quality, accessible components built on Radix UI
-- **🎯 Lucide React** - Beautiful & consistent icon library
-- **🌈 Framer Motion** - Production-ready motion library for React
-- **🎨 Next Themes** - Perfect dark mode in 2 lines of code
+### For Traders (Subscribers)
+- 🔍 **Browse Verified Providers** - Compare providers by win rate, price, and reviews
+- 📊 **Transparent Performance** - Real stats calculated from actual signal outcomes
+- 💳 **Multiple Payment Options** - Mobile Money (MTN/Airtel), Cards, Crypto
+- 📱 **PWA Support** - Install as an app on your phone
+- 🔔 **Instant Notifications** - Get alerts for new signals and subscription updates
+- ⭐ **Reviews & Ratings** - Read real reviews from verified subscribers
 
-### 📋 Forms & Validation
-- **🎣 React Hook Form** - Performant forms with easy validation
-- **✅ Zod** - TypeScript-first schema validation
+### For Signal Providers
+- 👤 **Provider Profile** - Showcase your trading expertise
+- 📈 **Performance Tracking** - Automatic win rate and pip calculations
+- 💰 **Flexible Pricing** - Weekly, monthly, quarterly, or yearly plans
+- 👥 **Subscriber Management** - Track your subscribers and earnings
+- 🔐 **Secure Payments** - Platform holds funds until confirmed
 
-### 🔄 State Management & Data Fetching
-- **🐻 Zustand** - Simple, scalable state management
-- **🔄 TanStack Query** - Powerful data synchronization for React
-- **🌐 Fetch** - Promise-based HTTP request
+### Payment Integration
+- **Flutterwave** - Cards, MTN Mobile Money, Airtel Money, M-Pesa
+- **Crypto** - USDT (TRC20), Ethereum, Bitcoin
+- **Secure Escrow** - Platform holds funds until subscription confirmed
 
-### 🗄️ Database & Backend
-- **🗄️ Prisma** - Next-generation TypeScript ORM
-- **🔐 NextAuth.js** - Complete open-source authentication solution
+## 🛠️ Tech Stack
 
-### 🎨 Advanced UI Features
-- **📊 TanStack Table** - Headless UI for building tables and datagrids
-- **🖱️ DND Kit** - Modern drag and drop toolkit for React
-- **📊 Recharts** - Redefined chart library built with React and D3
-- **🖼️ Sharp** - High performance image processing
-
-### 🌍 Internationalization & Utilities
-- **🌍 Next Intl** - Internationalization library for Next.js
-- **📅 Date-fns** - Modern JavaScript date utility library
-- **🪝 ReactUse** - Collection of essential React hooks for modern development
-
-## 🎯 Why This Scaffold?
-
-- **🏎️ Fast Development** - Pre-configured tooling and best practices
-- **🎨 Beautiful UI** - Complete shadcn/ui component library with advanced interactions
-- **🔒 Type Safety** - Full TypeScript configuration with Zod validation
-- **📱 Responsive** - Mobile-first design principles with smooth animations
-- **🗄️ Database Ready** - Prisma ORM configured for rapid backend development
-- **🔐 Auth Included** - NextAuth.js for secure authentication flows
-- **📊 Data Visualization** - Charts, tables, and drag-and-drop functionality
-- **🌍 i18n Ready** - Multi-language support with Next Intl
-- **🚀 Production Ready** - Optimized build and deployment settings
-- **🤖 AI-Friendly** - Structured codebase perfect for AI assistance
-
-## 🚀 Quick Start
-
-```bash
-# Install dependencies
-bun install
-
-# Start development server
-bun run dev
-
-# Build for production
-bun run build
-
-# Start production server
-bun start
-```
-
-Open [http://localhost:3000](http://localhost:3000) to see your application running.
-
-## 🤖 Powered by Z.ai
-
-This scaffold is optimized for use with [Z.ai](https://chat.z.ai) - your AI assistant for:
-
-- **💻 Code Generation** - Generate components, pages, and features instantly
-- **🎨 UI Development** - Create beautiful interfaces with AI assistance  
-- **🔧 Bug Fixing** - Identify and resolve issues with intelligent suggestions
-- **📝 Documentation** - Auto-generate comprehensive documentation
-- **🚀 Optimization** - Performance improvements and best practices
-
-Ready to build something amazing? Start chatting with Z.ai at [chat.z.ai](https://chat.z.ai) and experience the future of AI-powered development!
+- **Framework**: Next.js 16 (App Router)
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS 4 + shadcn/ui
+- **Database**: Supabase (PostgreSQL)
+- **Authentication**: Supabase Auth (Email + Google OAuth)
+- **State Management**: Zustand
+- **Data Fetching**: TanStack Query
+- **Payments**: Flutterwave + Crypto
+- **Icons**: Lucide React
+- **Animations**: Framer Motion
 
 ## 📁 Project Structure
 
 ```
 src/
-├── app/                 # Next.js App Router pages
-├── components/          # Reusable React components
-│   └── ui/             # shadcn/ui components
-├── hooks/              # Custom React hooks
-└── lib/                # Utility functions and configurations
+├── app/                    # Next.js App Router pages
+│   ├── (auth)/            # Authentication pages (login, register)
+│   ├── (dashboard)/       # Dashboard pages (subscriber, provider, admin)
+│   ├── api/               # API routes
+│   ├── providers/         # Public provider pages
+│   └── auth/              # Auth callback handlers
+├── components/            # Reusable React components
+│   ├── ui/               # shadcn/ui components
+│   └── layout/           # Layout components (Navbar, Footer)
+├── hooks/                 # Custom React hooks
+├── lib/                   # Utility functions and configurations
+│   ├── supabase/         # Supabase client configuration
+│   ├── middleware/       # Security and rate limiting
+│   └── constants/        # App constants
+├── stores/               # Zustand stores
+└── types/                # TypeScript type definitions
 ```
 
-## 🎨 Available Features & Components
+## 🚀 Getting Started
 
-This scaffold includes a comprehensive set of modern web development tools:
+### Prerequisites
 
-### 🧩 UI Components (shadcn/ui)
-- **Layout**: Card, Separator, Aspect Ratio, Resizable Panels
-- **Forms**: Input, Textarea, Select, Checkbox, Radio Group, Switch
-- **Feedback**: Alert, Toast (Sonner), Progress, Skeleton
-- **Navigation**: Breadcrumb, Menubar, Navigation Menu, Pagination
-- **Overlay**: Dialog, Sheet, Popover, Tooltip, Hover Card
-- **Data Display**: Badge, Avatar, Calendar
+- Node.js 18+ or Bun
+- A Supabase account
+- A Flutterwave account (for payments)
 
-### 📊 Advanced Data Features
-- **Tables**: Powerful data tables with sorting, filtering, pagination (TanStack Table)
-- **Charts**: Beautiful visualizations with Recharts
-- **Forms**: Type-safe forms with React Hook Form + Zod validation
+### Installation
 
-### 🎨 Interactive Features
-- **Animations**: Smooth micro-interactions with Framer Motion
-- **Drag & Drop**: Modern drag-and-drop functionality with DND Kit
-- **Theme Switching**: Built-in dark/light mode support
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/hamtechug256/piptray.git
+   cd piptray
+   ```
 
-### 🔐 Backend Integration
-- **Authentication**: Ready-to-use auth flows with NextAuth.js
-- **Database**: Type-safe database operations with Prisma
-- **API Client**: HTTP requests with Fetch + TanStack Query
-- **State Management**: Simple and scalable with Zustand
+2. **Install dependencies**
+   ```bash
+   bun install
+   ```
 
-### 🌍 Production Features
-- **Internationalization**: Multi-language support with Next Intl
-- **Image Optimization**: Automatic image processing with Sharp
-- **Type Safety**: End-to-end TypeScript with Zod validation
-- **Essential Hooks**: 100+ useful React hooks with ReactUse for common patterns
+3. **Set up environment variables**
+   ```bash
+   cp .env.example .env.local
+   ```
+   
+   Fill in your environment variables (see Environment Variables section below)
 
-## 🤝 Get Started with Z.ai
+4. **Run database migrations**
+   ```bash
+   bunx prisma generate
+   bunx prisma migrate dev
+   ```
 
-1. **Clone this scaffold** to jumpstart your project
-2. **Visit [chat.z.ai](https://chat.z.ai)** to access your AI coding assistant
-3. **Start building** with intelligent code generation and assistance
-4. **Deploy with confidence** using the production-ready setup
+5. **Start the development server**
+   ```bash
+   bun run dev
+   ```
+
+6. Open [http://localhost:3000](http://localhost:3000)
+
+## 🔐 Environment Variables
+
+Create a `.env.local` file with the following variables:
+
+```env
+# App
+NEXT_PUBLIC_APP_URL="http://localhost:3000"
+
+# Supabase
+NEXT_PUBLIC_SUPABASE_URL="https://your-project.supabase.co"
+NEXT_PUBLIC_SUPABASE_ANON_KEY="your-anon-key"
+SUPABASE_SERVICE_ROLE_KEY="your-service-role-key"
+DATABASE_URL="postgresql://..."
+DIRECT_URL="postgresql://..."
+
+# Flutterwave
+FLUTTERWAVE_SECRET_KEY="FLWSECK_TEST-..."
+FLUTTERWAVE_PUBLIC_KEY="FLWPUB_TEST-..."
+FLUTTERWAVE_WEBHOOK_SECRET="your-webhook-secret"
+
+# Crypto Wallets (Platform)
+PLATFORM_USDT_WALLET="TYourTRC20Address"
+PLATFORM_ETHEREUM_WALLET="0xYourEthAddress"
+PLATFORM_BITCOIN_WALLET="bc1qYourBtcAddress"
+
+# Security
+JWT_SECRET="your-random-secret-string"
+```
+
+## 📱 PWA Installation
+
+PipTray can be installed as a Progressive Web App:
+
+1. Visit the site in Chrome/Edge on mobile
+2. Tap "Add to Home Screen" in the browser menu
+3. The app will be available from your home screen
+
+## 🔒 Security Features
+
+- **Rate Limiting** - Prevents abuse on API endpoints
+- **Input Sanitization** - XSS protection
+- **CSRF Protection** - Built-in with Next.js
+- **Secure Headers** - CSP, HSTS, X-Frame-Options
+- **Password Hashing** - Handled by Supabase Auth
+
+## 🌍 Supported Countries
+
+Currently optimized for:
+- 🇺🇬 Uganda (UGX, MTN/Airtel Money)
+- 🇰🇪 Kenya (KES, M-Pesa)
+- 🇷🇼 Rwanda (RWF, MTN/Airtel)
+- 🇬🇭 Ghana (GHS, MTN/Vodafone)
+- 🇳🇬 Nigeria (NGN)
+- 🇿🇦 South Africa (ZAR)
+
+More African countries coming soon!
+
+## 📊 Database Schema
+
+The application uses the following main tables:
+- `users` - User accounts and profiles
+- `providers` - Signal provider profiles
+- `signals` - Trading signals
+- `subscriptions` - User subscriptions to providers
+- `payments` - Payment records
+- `notifications` - User notifications
+- `reviews` - Provider reviews
+
+## 🧪 Testing
+
+```bash
+# Run linting
+bun run lint
+
+# Build for production
+bun run build
+```
+
+## 📝 License
+
+This project is proprietary software. All rights reserved.
+
+## 🤝 Support
+
+For support, email support@piptray.com or join our Telegram channel.
 
 ---
 
-Built with ❤️ for the developer community. Supercharged by [Z.ai](https://chat.z.ai) 🚀
+Built with ❤️ in Uganda 🇺🇬
