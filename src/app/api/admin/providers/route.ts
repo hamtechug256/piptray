@@ -31,30 +31,30 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    // Get ALL providers (including inactive) - using snake_case column names
+    // Get ALL providers (including inactive) - use ACTUAL database column names
     const { data: providers, error } = await supabase
       .from('providers')
       .select(`
         id,
-        user_id,
-        display_name,
+        "userId",
+        "displayName",
         bio,
         avatar,
         tier,
-        win_rate,
-        total_signals,
-        total_pips,
+        "winRate",
+        "totalSignals",
+        "totalPips",
         subscribers,
-        monthly_price,
+        "monthlyPrice",
         average_rating,
         total_reviews,
-        is_verified,
-        is_active,
+        "isVerified",
+        "isActive",
         pairs,
-        created_at,
+        "createdAt",
         user:users(id, email, name, avatar)
       `)
-      .order('created_at', { ascending: false });
+      .order('"createdAt"', { ascending: false });
 
     if (error) {
       console.error('Error fetching providers:', error);
@@ -64,22 +64,22 @@ export async function GET(request: NextRequest) {
     // Transform to camelCase for frontend
     const transformedProviders = (providers || []).map(p => ({
       id: p.id,
-      userId: p.user_id,
-      displayName: p.display_name,
+      userId: p.userId,
+      displayName: p.displayName,
       bio: p.bio,
       avatar: p.avatar,
       tier: p.tier,
-      winRate: p.win_rate || 0,
-      totalSignals: p.total_signals || 0,
-      totalPips: p.total_pips || 0,
+      winRate: p.winRate || 0,
+      totalSignals: p.totalSignals || 0,
+      totalPips: p.totalPips || 0,
       subscribers: p.subscribers || 0,
-      monthlyPrice: p.monthly_price || 0,
+      monthlyPrice: p.monthlyPrice || 0,
       averageRating: p.average_rating || 0,
       totalReviews: p.total_reviews || 0,
-      isVerified: p.is_verified || false,
-      isActive: p.is_active || false,
+      isVerified: p.isVerified || false,
+      isActive: p.isActive || false,
       pairs: p.pairs || [],
-      createdAt: p.created_at,
+      createdAt: p.createdAt,
       user: p.user,
     }));
 
@@ -127,14 +127,14 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Provider ID is required' }, { status: 400 });
     }
 
-    // Build update with snake_case column names
-    const updateData: Record<string, unknown> = { updated_at: new Date().toISOString() };
+    // Build update with ACTUAL database column names (camelCase with quotes)
+    const updateData: Record<string, unknown> = { "updatedAt": new Date().toISOString() };
     
-    if (isActive !== undefined) updateData.is_active = isActive;
+    if (isActive !== undefined) updateData["isActive"] = isActive;
     if (isVerified !== undefined) {
-      updateData.is_verified = isVerified;
+      updateData["isVerified"] = isVerified;
       if (isVerified) {
-        updateData.verified_at = new Date().toISOString();
+        updateData["verifiedAt"] = new Date().toISOString();
       }
     }
     if (tier) updateData.tier = tier;

@@ -13,7 +13,24 @@ export async function GET(
     const { data, error } = await supabase
       .from('providers')
       .select(`
-        *,
+        id,
+        "userId",
+        "displayName",
+        bio,
+        avatar,
+        tier,
+        "winRate",
+        "totalSignals",
+        "totalPips",
+        "avgRR",
+        "monthlyPrice",
+        average_rating,
+        total_reviews,
+        pairs,
+        subscribers,
+        "isVerified",
+        "isActive",
+        "createdAt",
         user:users(id, name, email, avatar)
       `)
       .eq('id', id)
@@ -31,28 +48,57 @@ export async function GET(
     const { data: signals } = await supabase
       .from('signals')
       .select('*')
-      .eq('provider_id', id)
-      .order('created_at', { ascending: false })
+      .eq('"providerId"', id)
+      .order('"createdAt"', { ascending: false })
       .limit(10);
 
     // Get reviews
     const { data: reviews } = await supabase
       .from('reviews')
       .select(`
-        *,
+        id,
+        rating,
+        title,
+        comment,
+        "isVerified",
+        "isPublic",
+        "helpfulCount",
+        "createdAt",
         user:users(id, name, avatar)
       `)
-      .eq('provider_id', id)
-      .order('created_at', { ascending: false })
+      .eq('"providerId"', id)
+      .eq('"isPublic"', true)
+      .order('"createdAt"', { ascending: false })
       .limit(10);
+
+    // Transform for frontend
+    const transformedData = {
+      id: data.id,
+      userId: data.userId,
+      displayName: data.displayName,
+      bio: data.bio,
+      avatar: data.avatar,
+      tier: data.tier,
+      winRate: data.winRate || 0,
+      totalSignals: data.totalSignals || 0,
+      totalPips: data.totalPips || 0,
+      avgRR: data.avgRR || 0,
+      monthlyPrice: data.monthlyPrice || 0,
+      averageRating: data.average_rating || 0,
+      totalReviews: data.total_reviews || 0,
+      pairs: data.pairs || [],
+      subscribers: data.subscribers || 0,
+      isVerified: data.isVerified || false,
+      isActive: data.isActive || false,
+      createdAt: data.createdAt,
+      user: data.user,
+      signals: signals || [],
+      reviews: reviews || [],
+    };
 
     return NextResponse.json({
       success: true,
-      data: {
-        ...data,
-        signals: signals || [],
-        reviews: reviews || [],
-      },
+      data: transformedData,
     });
   } catch (error) {
     console.error('Error:', error);
@@ -84,11 +130,11 @@ export async function PUT(
     // Check if user owns this provider profile
     const { data: provider } = await supabase
       .from('providers')
-      .select('user_id')
+      .select('"userId"')
       .eq('id', id)
       .single();
 
-    if (!provider || provider.user_id !== authUser.id) {
+    if (!provider || provider.userId !== authUser.id) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
         { status: 403 }
@@ -96,18 +142,22 @@ export async function PUT(
     }
 
     const body = await request.json();
-    const updates = {
-      ...body,
-      updated_at: new Date().toISOString(),
+    
+    // Build updates with correct column names
+    const updates: Record<string, unknown> = {
+      "updatedAt": new Date().toISOString(),
     };
-
-    // Remove fields that shouldn't be updated directly
-    delete updates.id;
-    delete updates.user_id;
-    delete updates.created_at;
-    delete updates.win_rate;
-    delete updates.total_signals;
-    delete updates.total_pips;
+    
+    // Map frontend names to database column names
+    if (body.displayName !== undefined) updates["displayName"] = body.displayName;
+    if (body.bio !== undefined) updates.bio = body.bio;
+    if (body.avatar !== undefined) updates.avatar = body.avatar;
+    if (body.pairs !== undefined) updates.pairs = body.pairs;
+    if (body.timeframes !== undefined) updates.timeframes = body.timeframes;
+    if (body.monthlyPrice !== undefined) updates["monthlyPrice"] = body.monthlyPrice;
+    if (body.weeklyPrice !== undefined) updates.weeklyprice = body.weeklyPrice;
+    if (body.quarterlyPrice !== undefined) updates.quarterlyprice = body.quarterlyPrice;
+    if (body.yearlyPrice !== undefined) updates.yearlyprice = body.yearlyPrice;
 
     const { data, error } = await supabase
       .from('providers')

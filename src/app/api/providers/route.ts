@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 
 // GET /api/providers - List providers with filters
+// Database uses MIXED case: "displayName", "isActive", "userId" (camelCase with quotes)
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient();
@@ -11,33 +12,33 @@ export async function GET(request: NextRequest) {
     const offset = parseInt(searchParams.get('offset') || '0');
     const tier = searchParams.get('tier');
     const pair = searchParams.get('pair');
-    const sortBy = searchParams.get('sortBy') || 'win_rate';
+    const sortBy = searchParams.get('sortBy') || 'winRate';
     const search = searchParams.get('search');
 
-    // Use explicit column names with snake_case
+    // Use ACTUAL database column names (camelCase in quotes for mixed case)
     let query = supabase
       .from('providers')
       .select(`
         id,
-        user_id,
-        display_name,
+        "userId",
+        "displayName",
         bio,
         avatar,
         tier,
-        win_rate,
-        total_signals,
-        total_pips,
-        monthly_price,
+        "winRate",
+        "totalSignals",
+        "totalPips",
+        "monthlyPrice",
         average_rating,
         total_reviews,
         pairs,
         subscribers,
-        is_verified,
-        is_active,
-        created_at,
+        "isVerified",
+        "isActive",
+        "createdAt",
         user:users(id, name, email, avatar)
       `)
-      .eq('is_active', true);
+      .eq('"isActive"', true);
 
     // Apply filters
     if (tier) {
@@ -49,13 +50,13 @@ export async function GET(request: NextRequest) {
     }
 
     if (search) {
-      query = query.ilike('display_name', `%${search}%`);
+      query = query.ilike('"displayName"', `%${search}%`);
     }
 
     // Apply sorting
     const sortColumn = sortBy === 'subscribers' ? 'subscribers' : 
                        sortBy === 'rating' ? 'average_rating' : 
-                       sortBy === 'pips' ? 'total_pips' : 'win_rate';
+                       sortBy === 'pips' ? '"totalPips"' : '"winRate"';
     query = query.order(sortColumn, { ascending: false });
 
     // Apply pagination
@@ -71,25 +72,25 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Transform to camelCase for frontend
+    // Transform to camelCase for frontend (already camelCase from DB mostly)
     const transformedData = (data || []).map(p => ({
       id: p.id,
-      userId: p.user_id,
-      displayName: p.display_name,
+      userId: p.userId,
+      displayName: p.displayName,
       bio: p.bio,
       avatar: p.avatar,
       tier: p.tier,
-      winRate: p.win_rate || 0,
-      totalSignals: p.total_signals || 0,
-      totalPips: p.total_pips || 0,
-      monthlyPrice: p.monthly_price || 0,
+      winRate: p.winRate || 0,
+      totalSignals: p.totalSignals || 0,
+      totalPips: p.totalPips || 0,
+      monthlyPrice: p.monthlyPrice || 0,
       averageRating: p.average_rating || 0,
       totalReviews: p.total_reviews || 0,
       pairs: p.pairs || [],
       subscribers: p.subscribers || 0,
-      isVerified: p.is_verified || false,
-      isActive: p.is_active || false,
-      createdAt: p.created_at,
+      isVerified: p.isVerified || false,
+      isActive: p.isActive || false,
+      createdAt: p.createdAt,
       user: p.user,
     }));
 
@@ -97,7 +98,7 @@ export async function GET(request: NextRequest) {
     const { count } = await supabase
       .from('providers')
       .select('*', { count: 'exact', head: true })
-      .eq('is_active', true);
+      .eq('"isActive"', true);
 
     return NextResponse.json({
       success: true,
@@ -135,25 +136,25 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const {
-      display_name,
+      displayName,
       bio,
       pairs = [],
       timeframes = [],
-      monthly_price = 0,
-      weekly_price = 0,
-      quarterly_price = 0,
-      yearly_price = 0,
-      binance_wallet,
-      ethereum_wallet,
-      mtn_momo_number,
-      airtel_money_number,
+      monthlyPrice = 0,
+      weeklyprice = 0,
+      quarterlyprice = 0,
+      yearlyprice = 0,
+      binancewallet,
+      ethereumwallet,
+      mtnmomonumber,
+      airtelmoneynumber,
     } = body;
 
     // Check if provider profile already exists
     const { data: existingProvider } = await supabase
       .from('providers')
       .select('*')
-      .eq('user_id', authUser.id)
+      .eq('"userId"', authUser.id)
       .single();
 
     if (existingProvider) {
@@ -163,27 +164,35 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create provider profile
+    // Create provider profile with correct column names
     const { data, error } = await supabase
       .from('providers')
       .insert({
-        user_id: authUser.id,
-        display_name,
+        "userId": authUser.id,
+        "displayName": displayName,
         bio,
         pairs,
         timeframes,
-        monthly_price,
-        weekly_price,
-        quarterly_price,
-        yearly_price,
-        binance_wallet,
-        ethereum_wallet,
-        mtn_momo_number,
-        airtel_money_number,
+        "monthlyPrice": monthlyPrice,
+        weeklyprice,
+        quarterlyprice,
+        yearlyprice,
+        binancewallet,
+        ethereumwallet,
+        mtnmomonumber,
+        airtelmoneynumber,
         tier: 'new',
-        is_active: false, // Requires admin approval
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
+        "isActive": false, // Requires admin approval
+        "isVerified": false,
+        "winRate": 0,
+        "totalSignals": 0,
+        "totalPips": 0,
+        "avgRR": 0,
+        average_rating: 0,
+        total_reviews: 0,
+        subscribers: 0,
+        "createdAt": new Date().toISOString(),
+        "updatedAt": new Date().toISOString(),
       })
       .select()
       .single();
