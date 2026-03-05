@@ -39,10 +39,11 @@ export async function GET(request: NextRequest) {
     const role = searchParams.get('role') || '';
     const offset = (page - 1) * limit;
 
-    // Build query
+    // Build query - use ACTUAL database column names
+    // Users table has: id, email, name, role, avatar, "emailVerified", "createdAt", "lastLoginAt"
     let query = supabase
       .from('users')
-      .select('id, email, name, role, avatar, email_verified, created_at, last_login_at', { count: 'exact' });
+      .select('id, email, name, role, avatar, "emailVerified", "createdAt", "lastLoginAt"', { count: 'exact' });
 
     if (search) {
       query = query.or(`email.ilike.%${search}%,name.ilike.%${search}%`);
@@ -53,7 +54,7 @@ export async function GET(request: NextRequest) {
     }
 
     const { data: users, count, error } = await query
-      .order('created_at', { ascending: false })
+      .order('"createdAt"', { ascending: false })
       .range(offset, offset + limit - 1);
 
     if (error) {
@@ -61,16 +62,16 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    // Transform to camelCase for frontend
+    // Transform to camelCase for frontend (already mostly camelCase from DB)
     const transformedUsers = (users || []).map(u => ({
       id: u.id,
       email: u.email,
       name: u.name,
       role: u.role,
       avatar: u.avatar,
-      emailVerified: u.email_verified,
-      createdAt: u.created_at,
-      lastLoginAt: u.last_login_at,
+      emailVerified: u.emailVerified || false,
+      createdAt: u.createdAt,
+      lastLoginAt: u.lastLoginAt,
     }));
 
     return NextResponse.json({
@@ -123,11 +124,12 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
     }
 
-    const updateData: Record<string, unknown> = { updated_at: new Date().toISOString() };
+    // Build update with ACTUAL database column names
+    const updateData: Record<string, unknown> = { "updatedAt": new Date().toISOString() };
     
     if (role) updateData.role = role;
     if (name !== undefined) updateData.name = name;
-    if (emailVerified !== undefined) updateData.email_verified = emailVerified;
+    if (emailVerified !== undefined) updateData["emailVerified"] = emailVerified;
 
     const { error } = await supabase
       .from('users')
