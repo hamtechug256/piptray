@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
       .from('signals')
       .select(`
         *,
-        provider:providers(id, displayName, tier, user:users(email))
+        provider:providers(id, display_name, tier, user:users(email))
       `, { count: 'exact' });
 
     if (status) {
@@ -61,7 +61,7 @@ export async function GET(request: NextRequest) {
     }
 
     const { data: signals, count, error } = await query
-      .order('createdAt', { ascending: false })
+      .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
 
     if (error) {
@@ -72,7 +72,7 @@ export async function GET(request: NextRequest) {
     // Get signal stats
     const { data: allSignals } = await supabase
       .from('signals')
-      .select('status, outcome, resultPips');
+      .select('status, outcome, result_pips');
 
     const stats = {
       total: allSignals?.length || 0,
@@ -80,12 +80,36 @@ export async function GET(request: NextRequest) {
       closed: allSignals?.filter(s => s.status !== 'active').length || 0,
       wins: allSignals?.filter(s => s.outcome === 'win').length || 0,
       losses: allSignals?.filter(s => s.outcome === 'loss').length || 0,
-      totalPips: allSignals?.reduce((sum, s) => sum + (s.resultPips || 0), 0) || 0,
+      totalPips: allSignals?.reduce((sum, s) => sum + (s.result_pips || 0), 0) || 0,
     };
+
+    // Transform signals for frontend
+    const transformedSignals = (signals || []).map(s => ({
+      ...s,
+      resultPips: s.result_pips,
+      entryPrice: s.entry_price,
+      entryZoneLow: s.entry_zone_low,
+      entryZoneHigh: s.entry_zone_high,
+      stopLoss: s.stop_loss,
+      takeProfit1: s.take_profit_1,
+      takeProfit2: s.take_profit_2,
+      takeProfit3: s.take_profit_3,
+      chartImage: s.chart_image,
+      viewsCount: s.views_count,
+      isFree: s.is_free,
+      isPublished: s.is_published,
+      closedAt: s.closed_at,
+      createdAt: s.created_at,
+      updatedAt: s.updated_at,
+      provider: s.provider ? {
+        ...s.provider,
+        displayName: s.provider.display_name,
+      } : null,
+    }));
 
     return NextResponse.json({
       success: true,
-      data: signals,
+      data: transformedSignals,
       stats,
       pagination: {
         page,

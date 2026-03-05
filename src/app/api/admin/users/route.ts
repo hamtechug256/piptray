@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
     // Build query
     let query = supabase
       .from('users')
-      .select('id, email, name, role, avatar, emailVerified, createdAt, lastLoginAt', { count: 'exact' });
+      .select('id, email, name, role, avatar, email_verified, created_at, last_login_at', { count: 'exact' });
 
     if (search) {
       query = query.or(`email.ilike.%${search}%,name.ilike.%${search}%`);
@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
     }
 
     const { data: users, count, error } = await query
-      .order('createdAt', { ascending: false })
+      .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
 
     if (error) {
@@ -61,9 +61,21 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
+    // Transform to camelCase for frontend
+    const transformedUsers = (users || []).map(u => ({
+      id: u.id,
+      email: u.email,
+      name: u.name,
+      role: u.role,
+      avatar: u.avatar,
+      emailVerified: u.email_verified,
+      createdAt: u.created_at,
+      lastLoginAt: u.last_login_at,
+    }));
+
     return NextResponse.json({
       success: true,
-      data: users,
+      data: transformedUsers,
       pagination: {
         page,
         limit,
@@ -111,11 +123,11 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
     }
 
-    const updateData: Record<string, unknown> = { updatedAt: new Date().toISOString() };
+    const updateData: Record<string, unknown> = { updated_at: new Date().toISOString() };
     
     if (role) updateData.role = role;
     if (name !== undefined) updateData.name = name;
-    if (emailVerified !== undefined) updateData.emailVerified = emailVerified;
+    if (emailVerified !== undefined) updateData.email_verified = emailVerified;
 
     const { error } = await supabase
       .from('users')

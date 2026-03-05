@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
       // Total users
       supabase.from('users').select('id', { count: 'exact', head: true }),
       // Total providers
-      supabase.from('providers').select('id', { count: 'exact', head: true }).eq('isActive', true),
+      supabase.from('providers').select('id', { count: 'exact', head: true }).eq('is_active', true),
       // Subscribers count
       supabase.from('users').select('id', { count: 'exact', head: true }).eq('role', 'subscriber'),
       // Active subscriptions
@@ -57,9 +57,9 @@ export async function GET(request: NextRequest) {
       // Pending applications
       supabase.from('provider_applications').select('id', { count: 'exact', head: true }).in('status', ['pending', 'under_review']),
       // Recent payments
-      supabase.from('payments').select('id, amount, currency, paymentMethod, status, createdAt, user:users(email, name)').order('createdAt', { ascending: false }).limit(5),
+      supabase.from('payments').select('id, amount, currency, payment_method, status, created_at, user:users(email, name)').order('created_at', { ascending: false }).limit(5),
       // Recent users
-      supabase.from('users').select('id, email, name, role, createdAt').order('createdAt', { ascending: false }).limit(5),
+      supabase.from('users').select('id, email, name, role, created_at').order('created_at', { ascending: false }).limit(5),
     ]);
 
     // Calculate total revenue
@@ -71,9 +71,9 @@ export async function GET(request: NextRequest) {
     
     const { data: monthlyData } = await supabase
       .from('payments')
-      .select('amount, createdAt')
+      .select('amount, created_at')
       .eq('status', 'confirmed')
-      .gte('createdAt', sixMonthsAgo.toISOString());
+      .gte('created_at', sixMonthsAgo.toISOString());
 
     // Group by month
     const monthlyRevenue: Record<string, number> = {};
@@ -87,7 +87,7 @@ export async function GET(request: NextRequest) {
     }
 
     monthlyData?.forEach(p => {
-      const key = p.createdAt?.slice(0, 7);
+      const key = p.created_at?.slice(0, 7);
       if (key && monthlyRevenue[key] !== undefined) {
         monthlyRevenue[key] += p.amount || 0;
       }
@@ -95,11 +95,11 @@ export async function GET(request: NextRequest) {
 
     const { data: monthlyUserData } = await supabase
       .from('users')
-      .select('createdAt')
-      .gte('createdAt', sixMonthsAgo.toISOString());
+      .select('created_at')
+      .gte('created_at', sixMonthsAgo.toISOString());
 
     monthlyUserData?.forEach(u => {
-      const key = u.createdAt?.slice(0, 7);
+      const key = u.created_at?.slice(0, 7);
       if (key && monthlyUsers[key] !== undefined) {
         monthlyUsers[key]++;
       }
@@ -144,8 +144,22 @@ export async function GET(request: NextRequest) {
         plan,
         count,
       })),
-      recentPayments: recentPaymentsResult.data || [],
-      recentUsers: recentUsersResult.data || [],
+      recentPayments: (recentPaymentsResult.data || []).map(p => ({
+        id: p.id,
+        amount: p.amount,
+        currency: p.currency,
+        paymentMethod: p.payment_method,
+        status: p.status,
+        createdAt: p.created_at,
+        user: p.user,
+      })),
+      recentUsers: (recentUsersResult.data || []).map(u => ({
+        id: u.id,
+        email: u.email,
+        name: u.name,
+        role: u.role,
+        createdAt: u.created_at,
+      })),
     };
 
     return NextResponse.json({ success: true, data: stats });
