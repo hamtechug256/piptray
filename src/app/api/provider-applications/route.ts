@@ -12,21 +12,28 @@ export async function GET(request: NextRequest) {
     const userId = authHeader?.replace('Bearer ', '');
     
     if (!userId) {
+      console.error('No authorization header');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     if (!supabaseUrl || !supabaseServiceKey) {
+      console.error('Missing Supabase config');
       return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
     }
 
     const supabase = createClient<Database>(supabaseUrl, supabaseServiceKey);
     
     // Get user to check role
-    const { data: user } = await supabase
+    const { data: user, error: userError } = await supabase
       .from('users')
       .select('id, role')
       .eq('id', userId)
       .single();
+
+    if (userError) {
+      console.error('Error fetching user:', userError);
+      return NextResponse.json({ error: 'User lookup failed: ' + userError.message }, { status: 500 });
+    }
 
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
@@ -35,10 +42,7 @@ export async function GET(request: NextRequest) {
     // If admin, fetch all applications, otherwise fetch only user's applications
     let query = supabase
       .from('provider_applications')
-      .select(`
-        *,
-        user:users(id, email, name, avatar)
-      `)
+      .select('*')
       .order('created_at', { ascending: false });
 
     if (user.role !== 'admin') {
@@ -49,40 +53,57 @@ export async function GET(request: NextRequest) {
 
     if (error) {
       console.error('Error fetching applications:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ error: 'Query failed: ' + error.message }, { status: 500 });
     }
 
+    // Get user data separately for each application
+    const userIds = [...new Set((applications || []).map(a => a.user_id))];
+    const { data: users } = await supabase
+      .from('users')
+      .select('id, email, name, avatar')
+      .in('id', userIds);
+
+    const userMap = new Map((users || []).map(u => [u.id, u]));
+
     // Transform snake_case from DB to camelCase for frontend
-    const transformedApplications = (applications || []).map(app => ({
-      id: app.id,
-      userId: app.user_id,
-      status: app.status,
-      tradingExperience: app.trading_experience,
-      experienceLevel: app.experience_level,
-      tradingStyle: app.trading_style,
-      marketsTraded: app.markets_traded,
-      averageMonthlySignals: app.average_monthly_signals,
-      estimatedWinRate: app.estimated_win_rate,
-      trackRecordDescription: app.track_record_description,
-      telegramChannel: app.telegram_channel,
-      twitterHandle: app.twitter_handle,
-      tradingViewProfile: app.trading_view_profile,
-      otherSocialLinks: app.other_social_links,
-      motivationStatement: app.motivation_statement,
-      identityDocumentUrl: app.identity_document_url,
-      tradingStatementUrl: app.trading_statement_url,
-      adminNotes: app.admin_notes,
-      rejectionReason: app.rejection_reason,
-      createdAt: app.created_at,
-      updatedAt: app.updated_at,
-      user: app.user,
-    }));
+    const transformedApplications = (applications || []).map(app => {
+      const appUser = userMap.get(app.user_id);
+      return {
+        id: app.id,
+        userId: app.user_id,
+        status: app.status,
+        tradingExperience: app.trading_experience,
+        experienceLevel: app.experience_level,
+        tradingStyle: Array.isArray(app.trading_style) ? app.trading_style : [],
+        marketsTraded: Array.isArray(app.markets_traded) ? app.markets_traded : [],
+        averageMonthlySignals: app.average_monthly_signals,
+        estimatedWinRate: app.estimated_win_rate ? parseFloat(app.estimated_win_rate) : null,
+        trackRecordDescription: app.track_record_description,
+        telegramChannel: app.telegram_channel,
+        twitterHandle: app.twitter_handle,
+        tradingViewProfile: app.trading_view_profile,
+        otherSocialLinks: app.other_social_links,
+        motivationStatement: app.motivation_statement,
+        identityDocumentUrl: app.identity_document_url,
+        tradingStatementUrl: app.trading_statement_url,
+        adminNotes: app.admin_notes,
+        rejectionReason: app.rejection_reason,
+        createdAt: app.created_at,
+        updatedAt: app.updated_at,
+        user: appUser ? {
+          id: appUser.id,
+          email: appUser.email,
+          name: appUser.name,
+          avatar: appUser.avatar
+        } : null,
+      };
+    });
 
     return NextResponse.json({ success: true, data: transformedApplications });
   } catch (error) {
     console.error('Server error:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal server error: ' + (error instanceof Error ? error.message : String(error)) },
       { status: 500 }
     );
   }
