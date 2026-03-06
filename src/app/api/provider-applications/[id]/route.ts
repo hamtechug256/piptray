@@ -56,7 +56,33 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
-    return NextResponse.json({ success: true, data: application });
+    // Transform snake_case to camelCase for frontend
+    const transformedApp = {
+      id: application.id,
+      userId: application.user_id,
+      status: application.status,
+      tradingExperience: application.trading_experience,
+      experienceLevel: application.experience_level,
+      tradingStyle: application.trading_style,
+      marketsTraded: application.markets_traded,
+      averageMonthlySignals: application.average_monthly_signals,
+      estimatedWinRate: application.estimated_win_rate,
+      trackRecordDescription: application.track_record_description,
+      telegramChannel: application.telegram_channel,
+      twitterHandle: application.twitter_handle,
+      tradingViewProfile: application.trading_view_profile,
+      otherSocialLinks: application.other_social_links,
+      motivationStatement: application.motivation_statement,
+      identityDocumentUrl: application.identity_document_url,
+      tradingStatementUrl: application.trading_statement_url,
+      adminNotes: application.admin_notes,
+      rejectionReason: application.rejection_reason,
+      createdAt: application.created_at,
+      updatedAt: application.updated_at,
+      user: application.user,
+    };
+
+    return NextResponse.json({ success: true, data: transformedApp });
   } catch (error) {
     console.error('Server error:', error);
     return NextResponse.json(
